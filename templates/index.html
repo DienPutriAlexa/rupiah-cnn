@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RupiahLens - Pengenal Nilai Uang Nusantara</title>
+<style>
+:root{
+  --bg-gradient: linear-gradient(135deg, #1b0720 0%, #400c28 35%, #6e1824 70%, #8f2425 100%);
+  --card-bg: rgba(30, 9, 32, 0.90);
+  --gold: #FFD166;
+  --gold-glow: rgba(255, 209, 102, 0.35);
+  --amber: #FF9F1C;
+  --crimson: #C1121F;
+  --text-light: #FFF8E7;
+  --text-muted: #FFD8BE;
+  --line-gold: rgba(255, 209, 102, 0.4);
+  --denom: #FFD166;
+}
+
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
+
+body{
+  background: var(--bg-gradient);
+  color: var(--text-light);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  overflow-x: hidden;
+  padding-bottom: 40px;
+}
+
+/* ─── LATAR MOTIF BATIK BERGERAK LEMBUT ────────────────────── */
+.batik-bg-layer{
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.14;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cg fill='none' stroke='%23FFD166' stroke-width='1.5'%3E%3Cpath d='M0,40 Q20,20 40,40 T80,40'/%3E%3Cpath d='M0,0 Q20,20 40,0 T80,0'/%3E%3Cpath d='M0,80 Q20,60 40,80 T80,80'/%3E%3Cellipse cx='40' cy='40' rx='12' ry='18' transform='rotate(45 40 40)'/%3E%3Cellipse cx='40' cy='40' rx='12' ry='18' transform='rotate(-45 40 40)'/%3E%3Ccircle cx='40' cy='40' r='4' fill='%23FFD166'/%3E%3Ccircle cx='0' cy='0' r='3' fill='%23FFD166'/%3E%3Ccircle cx='80' cy='0' r='3' fill='%23FFD166'/%3E%3Ccircle cx='0' cy='80' r='3' fill='%23FFD166'/%3E%3Ccircle cx='80' cy='80' r='3' fill='%23FFD166'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 80px 80px;
+  animation: batikDrift 45s linear infinite;
+}
+@keyframes batikDrift{
+  0%{ background-position: 0 0; }
+  100%{ background-position: 160px 160px; }
+}
+
+/* ─── SILUET MONAS & PEGUNUNGAN INDONESIA ───────────────────── */
+.indonesia-skyline{
+  position: fixed;
+  bottom: 0; left: 0; width: 100%; height: 210px;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.38;
+  background-repeat: repeat-x;
+  background-position: bottom center;
+  background-size: 800px 210px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 210' preserveAspectRatio='none'%3E%3Cpath fill='%23190317' d='M0,210 L0,150 Q70,90 150,150 L260,150 L275,120 L285,120 L288,60 L293,60 L293,30 L297,30 L298,15 L300,5 L302,15 L303,30 L307,30 L307,60 L312,60 L315,120 L325,120 L340,150 L450,150 Q530,60 620,150 Q710,100 800,160 L800,210 Z'/%3E%3Cpath fill='%23FFD166' opacity='0.35' d='M297,5 Q300,0 303,5 Q300,10 297,5'/%3E%3C/svg%3E");
+  animation: floatSkyline 14s ease-in-out infinite alternate;
+}
+@keyframes floatSkyline{
+  0%{ transform: translateY(0px); }
+  100%{ transform: translateY(-7px); }
+}
+
+/* ─── AWAN NUSANTARA MELAYANG ──────────────────────────────── */
+.cloud{
+  position: fixed;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.22;
+  animation: cloudMove linear infinite;
+}
+.cloud1{
+  top: 14%; left: -160px;
+  width: 150px; height: 50px;
+  background: radial-gradient(circle, #FFD166 20%, #C1121F 70%, transparent 80%);
+  filter: blur(14px);
+  animation-duration: 32s;
+}
+.cloud2{
+  top: 32%; left: -220px;
+  width: 220px; height: 60px;
+  background: radial-gradient(circle, #FF9F1C 30%, #6E1824 75%, transparent 85%);
+  filter: blur(18px);
+  animation-duration: 42s;
+  animation-delay: 12s;
+}
+@keyframes cloudMove{
+  0%{ transform: translateX(0); }
+  100%{ transform: translateX(calc(100vw + 320px)); }
+}
+
+/* ─── KONTEN UTAMA ─────────────────────────────────────────── */
+header, main, footer{ position: relative; z-index: 5; }
+
+header{
+  text-align: center;
+  max-width: 650px;
+  padding: 32px 16px 12px;
+}
+
+.heritage-badge{
+  display: inline-block;
+  background: rgba(255, 209, 102, 0.12);
+  border: 1px solid var(--gold);
+  border-radius: 999px;
+  padding: 6px 20px;
+  font-size: 0.85rem;
+  color: var(--gold);
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  box-shadow: 0 0 16px var(--gold-glow);
+}
+
+h1{
+  font-size: clamp(2.3rem, 7vw, 3rem);
+  font-weight: 900;
+  color: var(--gold);
+  letter-spacing: 1px;
+  text-shadow: 0 3px 15px rgba(0, 0, 0, 0.7);
+}
+
+.subtitle{
+  color: var(--text-muted);
+  font-size: 1.05rem;
+  margin-top: 8px;
+  line-height: 1.4;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.5);
+}
+
+main{
+  width: 100%;
+  max-width: 560px;
+  padding: 10px 16px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.panel{
+  background: var(--card-bg);
+  backdrop-filter: blur(10px);
+  border: 2px solid var(--line-gold);
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.5);
+}
+
+.hint{
+  border-left: 6px solid var(--gold);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  background: rgba(38, 10, 32, 0.9);
+  border-radius: 12px;
+  padding: 14px 18px;
+}
+
+/* ─── BINGKAI KAMERA ────────────────────────────────────────── */
+.viewport{
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: #0d0211;
+  border-radius: 14px;
+  overflow: hidden;
+  position: relative;
+  border: 3px solid var(--gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 25px rgba(255, 209, 102, 0.25);
+}
+
+video, #preview{ width: 100%; height: 100%; }
+video{ object-fit: cover; }
+#preview{ object-fit: contain; }
+
+.target{
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80%; height: 52%;
+  border: 3px dashed var(--gold);
+  border-radius: 12px;
+  box-shadow: 0 0 0 9999px rgba(10, 2, 14, 0.65);
+  pointer-events: none;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 8px;
+  z-index: 5;
+  overflow: hidden;
+}
+
+.target span{
+  background: rgba(25, 6, 32, 0.92);
+  color: var(--gold);
+  font-size: 0.85rem;
+  font-weight: 800;
+  padding: 4px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--gold);
+  z-index: 6;
+  letter-spacing: 0.5px;
+}
+
+.scan-bar{
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 4px;
+  background: linear-gradient(90deg, transparent, #FFD166, #FF9F1C, #FFD166, transparent);
+  box-shadow: 0 0 15px #FFD166;
+  animation: scanBatik 2.2s ease-in-out infinite;
+}
+@keyframes scanBatik{
+  0%{ top: 0%; opacity: 0.4; }
+  50%{ top: 94%; opacity: 1; }
+  100%{ top: 0%; opacity: 0.4; }
+}
+
+.placeholder{
+  color: var(--text-muted);
+  text-align: center;
+  padding: 20px;
+  font-size: 1rem;
+}
+
+/* ─── TOMBOL POLOS TANPA IKON ───────────────────────────────── */
+.btns{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+button{
+  min-height: 54px;
+  background: #42132d;
+  color: var(--text-light);
+  border: 2px solid var(--line-gold);
+  padding: 12px 14px;
+  font-size: 1.05rem;
+  font-weight: 800;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all .2s ease;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+  letter-spacing: 0.3px;
+}
+button:hover{
+  background: #5d1b3f;
+  border-color: var(--gold);
+  transform: translateY(-2px);
+}
+
+button.btn-main{
+  grid-column: span 2;
+  min-height: 68px;
+  font-size: 1.3rem;
+  background: linear-gradient(135deg, #FFD166 0%, #FF9F1C 100%);
+  color: #210814;
+  border: 2px solid #FFF8E7;
+  box-shadow: 0 6px 20px rgba(255, 159, 28, 0.4);
+}
+button.btn-main:hover{
+  background: linear-gradient(135deg, #FFE299 0%, #FFB03B 100%);
+}
+
+button.cam-active{
+  background: linear-gradient(135deg, #C1121F 0%, #780000 100%) !important;
+  color: #FFF !important;
+  border-color: #FFA69E !important;
+}
+
+.status{
+  font-size: 1rem;
+  color: var(--text-muted);
+  text-align: center;
+  min-height: 1.5em;
+  font-weight: 600;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+}
+
+/* ─── KARTU HASIL DETEKSI (DYNAMIC COLOR) ───────────────────── */
+.result{
+  border: 3px solid var(--denom);
+  background: radial-gradient(circle at top, rgba(66, 13, 42, 0.95), rgba(18, 4, 24, 0.95));
+  border-radius: 20px;
+  padding: 22px;
+  text-align: center;
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.6), 0 0 25px rgba(255, 209, 102, 0.2);
+  transition: border-color .4s ease;
+}
+
+.result-title{
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 700;
+}
+
+.nominal{
+  font-size: clamp(2.8rem, 14vw, 4.6rem);
+  font-weight: 900;
+  line-height: 1.1;
+  color: var(--denom);
+  text-shadow: 0 3px 15px rgba(0,0,0,0.8);
+}
+
+.conf{
+  font-size: 1.1rem;
+  color: var(--text-light);
+  font-weight: 600;
+}
+
+.warn{
+  display: none;
+  background: #FFB703;
+  color: #1a0800;
+  font-weight: 800;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  margin-top: 4px;
+}
+.result.low .warn{ display: block; }
+
+.speaking{
+  display: none;
+  font-size: 1rem;
+  color: var(--gold);
+  font-weight: 700;
+}
+
+.debug{
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+}
+.debug span{ font-size: 0.85rem; color: var(--text-muted); }
+.debug img{
+  width: 140px; height: 80px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 2px solid var(--gold);
+}
+
+/* ─── LEGENDA PECAHAN RUPIAH ────────────────────────────────── */
+.legend-title{
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  text-align: center;
+  margin-bottom: 12px;
+  font-weight: 700;
+}
+.legend{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+.legend span{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-light);
+  background: rgba(28, 7, 34, 0.7);
+  border: 1px solid var(--line-gold);
+  border-radius: 999px;
+  padding: 5px 12px 5px 8px;
+}
+.legend b{ width: 14px; height: 14px; border-radius: 50%; display: inline-block; }
+
+canvas, input[type=file]{ display: none; }
+</style>
+</head>
+<body>
+
+<!-- Latar Belakang Seni Nusantara Bergerak -->
+<div class="batik-bg-layer" aria-hidden="true"></div>
+<div class="indonesia-skyline" aria-hidden="true"></div>
+<div class="cloud cloud1" aria-hidden="true"></div>
+<div class="cloud cloud2" aria-hidden="true"></div>
+
+<header>
+  <div class="heritage-badge">PENGAKSES RESMI RUPIAH NUSANTARA</div>
+  <h1>RupiahLens</h1>
+  <p class="subtitle">Pengenal Cerdas Nilai Uang Rupiah dengan Suara bagi Penyandang Tunanetra</p>
+</header>
+
+<main>
+  <div class="hint panel" role="alert">
+    Letakkan lembaran uang Rupiah di dalam kotak emas. Sistem akan langsung membaca dan membunyikan nominalnya tanpa perlu menekan tombol apa pun.
+  </div>
+
+  <div class="panel">
+    <div class="viewport">
+      <video id="camera" autoplay playsinline muted style="display:none"></video>
+      <img id="preview" style="display:none" alt="Pratinjau gambar uang">
+      <div id="target" class="target" style="display:none">
+        <div class="scan-bar"></div>
+        <span>Arahkan Uang ke Sini</span>
+      </div>
+      <div id="placeholder" class="placeholder">
+        Kamera belum aktif.<br>Pilih tombol <strong>Aktifkan Kamera Otomatis</strong> di bawah.
+      </div>
+    </div>
+  </div>
+
+  <div class="btns">
+    <button id="btnCam" class="btn-main" type="button">Aktifkan Kamera Otomatis</button>
+    <button id="btnUpload" type="button">Unggah Foto Uang</button>
+    <button id="btnVoice" type="button" aria-pressed="true">Suara: Aktif</button>
+    <input type="file" id="fileInput" accept="image/*" aria-label="Pilih foto uang dari galeri">
+  </div>
+
+  <p class="status" id="status" role="status" aria-live="polite">Menunggu kamera diaktifkan...</p>
+
+  <div class="result" id="result" aria-live="assertive" aria-atomic="true">
+    <div class="result-title">Hasil Pengenalan Uang</div>
+    <div class="nominal" id="nominal">-</div>
+    <div class="conf" id="conf">Dekatkan uang ke kamera</div>
+    <div class="warn" id="warn">Posisikan uang lebih jelas ke dalam kotak.</div>
+    <div class="speaking" id="speaking">Membacakan hasil pengenalan...</div>
+    <div class="debug" id="debug">
+      <span>Bagian uang yang diperiksa:</span>
+      <img id="debugImg" alt="Potongan citra uang yang dianalisis">
+    </div>
+  </div>
+
+  <div class="panel" aria-hidden="true">
+    <p class="legend-title">Warna Mengikuti Pecahan Resmi Bank Indonesia</p>
+    <div class="legend">
+      <span><b style="background:#C9C04A"></b>1.000</span>
+      <span><b style="background:#9AA5B1"></b>2.000</span>
+      <span><b style="background:#C4905C"></b>5.000</span>
+      <span><b style="background:#A678E8"></b>10.000</span>
+      <span><b style="background:#4DBE7A"></b>20.000</span>
+      <span><b style="background:#4A90E2"></b>50.000</span>
+      <span><b style="background:#E8707C"></b>75.000</span>
+      <span><b style="background:#E04A4F"></b>100.000</span>
+    </div>
+  </div>
+</main>
+
+<canvas id="canvas"></canvas>
+
+<script>
+const $ = id => document.getElementById(id);
+const video=$('camera'), preview=$('preview'), placeholder=$('placeholder'), target=$('target');
+const btnCam=$('btnCam'), btnUpload=$('btnUpload'), btnVoice=$('btnVoice'), fileInput=$('fileInput');
+const canvas=$('canvas'), resultBox=$('result'), nominalEl=$('nominal'), confEl=$('conf'), speakingEl=$('speaking');
+const debugBox=$('debug'), debugImg=$('debugImg'), statusEl=$('status');
+
+const CONFIDENCE_THRESHOLD = 75;
+const SCAN_INTERVAL_MS = 1000;
+const DENOM_COLORS = {1000:'#C9C04A',2000:'#9AA5B1',5000:'#C4905C',10000:'#A678E8',20000:'#4DBE7A',50000:'#4A90E2',75000:'#E8707C',100000:'#E04A4F'};
+
+let isCameraActive=false, stream=null, voiceOn=true, busy=false, objectUrl=null;
+let autoScanTimer=null;
+let lastSpokenNominal=null;
+let lastSpokenTime=0;
+
+function setStatus(msg){ statusEl.textContent = msg; }
+function vibrate(p){ if(navigator.vibrate) navigator.vibrate(p); }
+
+// ─── FITUR SUARA (TTS) ──────────────────────────────────────────
+function speak(text){
+  if(!voiceOn || !('speechSynthesis' in window)) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang='id-ID'; u.rate=0.95;
+  u.onstart=()=>{ speakingEl.style.display='block'; };
+  u.onend=u.onerror=()=>{ speakingEl.style.display='none'; };
+  speechSynthesis.speak(u);
+}
+
+btnVoice.addEventListener('click',()=>{
+  voiceOn=!voiceOn;
+  btnVoice.setAttribute('aria-pressed',voiceOn);
+  btnVoice.textContent = 'Suara: ' + (voiceOn ? 'Aktif' : 'Mati');
+  if(!voiceOn && 'speechSynthesis' in window) speechSynthesis.cancel();
+  setStatus(voiceOn ? 'Suara otomatis diaktifkan.' : 'Suara otomatis dimatikan.');
+  speak(voiceOn ? 'Suara aktif' : 'Suara nonaktif');
+});
+
+window.addEventListener('load',()=>setTimeout(()=>{
+  speak('Selamat datang di RupiahLens Nusantara. Pilih aktifkan kamera otomatis untuk memulai.');
+},800));
+
+// ─── KONTROL KAMERA & AUTOSCAN ──────────────────────────────────
+async function toggleCamera(){
+  if(!isCameraActive){
+    try{
+      try{
+        stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}});
+      }catch(e){
+        stream = await navigator.mediaDevices.getUserMedia({video:true});
+      }
+      video.srcObject=stream;
+      video.style.display='block'; target.style.display='flex';
+      preview.style.display='none'; placeholder.style.display='none';
+      btnCam.textContent='Matikan Kamera';
+      btnCam.classList.add('cam-active');
+      isCameraActive=true;
+      setStatus('Kamera aktif. Dekatkan uang ke kotak pemindai...');
+      speak('Kamera aktif. Dekatkan uang ke depan kamera.');
+
+      startAutoScan();
+
+    }catch(err){
+      setStatus('Kamera tidak bisa diakses. Periksa izin kamera atau coba unggah gambar.');
+      speak('Gagal mengakses kamera. Izinkan akses kamera.');
+    }
+  }else{
+    stopAutoScan();
+    if(stream) stream.getTracks().forEach(t=>t.stop());
+    video.style.display='none'; target.style.display='none'; placeholder.style.display='block';
+    btnCam.textContent='Aktifkan Kamera Otomatis';
+    btnCam.classList.remove('cam-active');
+    isCameraActive=false;
+    setStatus('Kamera dimatikan.');
+    speak('Kamera dimatikan.');
+  }
+}
+btnCam.addEventListener('click',toggleCamera);
+btnUpload.addEventListener('click',()=>fileInput.click());
+
+fileInput.addEventListener('change',e=>{
+  const file=e.target.files[0];
+  if(!file) return;
+  if(isCameraActive) toggleCamera();
+  if(objectUrl) URL.revokeObjectURL(objectUrl);
+  objectUrl=URL.createObjectURL(file);
+  preview.src=objectUrl;
+  preview.style.display='block'; target.style.display='none'; placeholder.style.display='none';
+  debugBox.style.display='none';
+  setStatus('Menganalisis foto uang...');
+  processImageBlob(file, true);
+});
+
+// ─── CROP AREA TARGET & KAMERA ──────────────────────────────────
+function captureCamera(){
+  return new Promise(resolve=>{
+    const vw=video.videoWidth, vh=video.videoHeight;
+    const ew=video.clientWidth, eh=video.clientHeight;
+    if(!vw || !vh){ resolve(null); return; }
+
+    const vr=vw/vh, er=ew/eh;
+    let visW,visH,visX,visY;
+    if(vr>er){ visH=vh; visW=vh*er; visX=(vw-visW)/2; visY=0; }
+    else{ visW=vw; visH=vw/er; visX=0; visY=(vh-visH)/2; }
+
+    const cw=visW*0.80, ch=visH*0.52;
+    const sx=visX+(visW-cw)/2, sy=visY+(visH-ch)/2;
+
+    canvas.width=256; canvas.height=256;
+    const ctx=canvas.getContext('2d');
+    ctx.drawImage(video,sx,sy,cw,ch,0,0,256,256);
+
+    debugImg.src=canvas.toDataURL('image/jpeg');
+    debugBox.style.display='flex';
+
+    canvas.toBlob(blob=>resolve(blob),'image/jpeg',0.92);
+  });
+}
+
+function setDenomColor(nominalStr){
+  const value=Number(String(nominalStr).replace(/\D/g,''));
+  resultBox.style.setProperty('--denom', DENOM_COLORS[value] || '#FFD166');
+}
+
+// ─── AUTO-SCAN INTERVAL ─────────────────────────────────────────
+function startAutoScan(){
+  if(autoScanTimer) clearInterval(autoScanTimer);
+  autoScanTimer = setInterval(async ()=>{
+    if(!isCameraActive || busy) return;
+    const blob = await captureCamera();
+    if(blob){
+      await processImageBlob(blob, false);
+    }
+  }, SCAN_INTERVAL_MS);
+}
+
+function stopAutoScan(){
+  if(autoScanTimer){
+    clearInterval(autoScanTimer);
+    autoScanTimer=null;
+  }
+}
+
+// ─── PENCOCOKAN NILAI RUPIAH DENGAN AUDIO COOLDOWN ──────────────
+async function processImageBlob(blob, forceSpeak=false){
+  busy=true;
+  const fd=new FormData();
+  fd.append('image', blob, 'rupiah_input.jpg');
+
+  try{
+    const res=await fetch('/predict',{method:'POST',body:fd});
+    const data=await res.json();
+
+    if(data.success){
+      const conf=Number(data.confidence);
+      setDenomColor(data.nominal);
+      nominalEl.textContent=data.nominal;
+      confEl.textContent='Akurasi: '+data.confidence+'%';
+
+      const now = Date.now();
+      const isNewNominal = (data.nominal !== lastSpokenNominal);
+      const isCooldownPassed = (now - lastSpokenTime > 3500);
+
+      if(conf >= CONFIDENCE_THRESHOLD){
+        resultBox.classList.remove('low');
+        setStatus('Uang dikenali: ' + data.nominal);
+
+        if(forceSpeak || isNewNominal || isCooldownPassed){
+          lastSpokenNominal = data.nominal;
+          lastSpokenTime = now;
+          vibrate(150);
+          speak(data.speech_text || data.nominal);
+        }
+      } else {
+        resultBox.classList.add('low');
+        setStatus('Sedang memindai... Letakkan uang tepat di dalam kotak.');
+      }
+    }
+  }catch(err){
+    console.error(err);
+  }finally{
+    busy=false;
+  }
+}
+</script>
+</body>
+</html>
