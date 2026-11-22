@@ -59,6 +59,13 @@ print(f"Model berhasil dimuat! (Tipe: {'Transfer Learning MobileNetV2' if is_mob
 
 def predict_crop(pil_img):
     """Memprediksi satu potongan gambar menggunakan model CNN"""
+    # 1. Cek apakah citra terlalu polos / gelap / tidak ada objek (tembok, meja polos, blur)
+    gray = pil_img.convert("L")
+    arr_gray = np.array(gray, dtype=np.float32)
+    # Jika kontras terlalu rendah (std dev < 15), hampir pasti bukan lembaran uang bertekstur
+    if arr_gray.std() < 15.0:
+        return "bukan_uang", 99.0
+
     img_resized = pil_img.resize((IMG_WIDTH, IMG_HEIGHT))
     img_array = np.array(img_resized, dtype=np.float32)
     
@@ -72,6 +79,11 @@ def predict_crop(pil_img):
     idx = int(np.argmax(preds))
     conf = float(preds[idx]) * 100
     nom_str = CLASSES[idx]
+
+    # Jika keyakinan model rendah (< 70%), anggap bukan uang
+    if conf < 70.0:
+        return "bukan_uang", conf
+
     return nom_str, conf
 
 def format_nominal_speech(value):
@@ -107,51 +119,74 @@ def predict():
     if file.filename == "":
         return jsonify({"success": False, "message": "File tidak dipilih"}), 400
 
+    mode = request.form.get("mode", "single")  # "single" atau "dual"
+
     try:
         image_bytes = file.read()
         full_img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
         w, h = full_img.size
 
-        # 1. Prediksi gambar penuh
+        # 1. Prediksi citra penuh (Full Image)
         nominal_full, conf_full = predict_crop(full_img)
 
-        # 2. Cek apakah ada 2 lembar uang berdampingan (Multi-Region Detection)
-        # Jika gambar cukup lebar, potong menjadi wilayah kiri (0..58%) dan kanan (42%..100%)
+        # 2. Cek apakah ada 2 lembar uang berdampingan (Side-by-Side Banknotes)
+        # Kondisi agar tidak memotong 1 lembar uang utuh menjadi 2 potongan palsu:
+        # - Rasio lebar terhadap tinggi harus sangat lebar (aspect_ratio >= 1.6)
+        # - Potongan kiri dan kanan harus sama-sama bernilai uang valid dengan akurasi >= 80%
+        # - Salah satu potongan harus cocok dengan nominal_full, ATAU nominal_full ragu-ragu (< 70%) / bukan_uang
         is_multi = False
-        if w >= 150:
-            left_crop = full_img.crop((0, 0, int(w * 0.58), h))
-            right_crop = full_img.crop((int(w * 0.42), 0, w, h))
+        aspect_ratio = w / max(h, 1)
+
+        if aspect_ratio >= 1.6 and w >= 200:
+            left_crop = full_img.crop((0, 0, int(w * 0.52), h))
+            right_crop = full_img.crop((int(w * 0.48), 0, w, h))
             
             nom_left, conf_left = predict_crop(left_crop)
             nom_right, conf_right = predict_crop(right_crop)
             
-            # Jika kedua sisi sama-sama mendeteksi uang yang valid dengan keyakinan tinggi (>= 85%)
-            if (nom_left != "bukan_uang" and nom_right != "bukan_uang" 
-                and conf_left >= 85.0 and conf_right >= 85.0):
-                is_multi = True
-                val_left = int(nom_left)
-                val_right = int(nom_right)
-                total_val = val_left + val_right
-                avg_conf = round((conf_left + conf_right) / 2, 2)
-                
-                suara_kiri = SPEECH_TEXTS.get(nom_left, f"Rp {val_left}")
-                suara_kanan = SPEECH_TEXTS.get(nom_right, f"Rp {val_right}")
-                total_speech = format_nominal_speech(total_val)
-                
-                return jsonify({
-                    "success": True,
-                    "is_multi": True,
-                    "is_money": True,
-                    "val_left": val_left,
-                    "val_right": val_right,
-                    "nominal_left": f"Rp {val_left:,}".replace(",", "."),
-                    "nominal_right": f"Rp {val_right:,}".replace(",", "."),
-                    "nominal": f"Rp {total_val:,}".replace(",", "."),
-                    "raw_nominal": str(total_val),
-                    "confidence": avg_conf,
-                    "speech_text": f"Dua lembar terdeteksi: {suara_kiri} dan {suara_kanan}. Totalnya {total_speech}.",
-                    "detail_text": f"Lembar 1: Rp {val_left:,} ({round(conf_left)}%) | Lembar 2: Rp {val_right:,} ({round(conf_right)}%)".replace(",", ".")
-                })
+            is_valid_money_both = (
+                nom_left != "bukan_uang" and nom_right != "bukan_uang"
+                and conf_left >= 80.0 and conf_right >= 80.0
+            )
+
+            if is_valid_money_both:
+                # Jika beda nominal (misal 5.000 dan 10.000 berdampingan)
+                is_distinct_dual = (
+                    nom_left != nom_right and (
+                        nominal_full == "bukan_uang" or conf_full < 70.0
+                        or nom_left == nominal_full or nom_right == nominal_full
+                    )
+                )
+                # Jika pecahan sama berdampingan khusus saat mode dual dan citra sangat lebar
+                is_same_dual = (
+                    mode == "dual" and nom_left == nom_right and aspect_ratio >= 2.6
+                )
+
+                if is_distinct_dual or is_same_dual:
+                    is_multi = True
+                    val_left = int(nom_left)
+                    val_right = int(nom_right)
+                    total_val = val_left + val_right
+                    avg_conf = round((conf_left + conf_right) / 2, 2)
+                    
+                    suara_kiri = SPEECH_TEXTS.get(nom_left, f"Rp {val_left}")
+                    suara_kanan = SPEECH_TEXTS.get(nom_right, f"Rp {val_right}")
+                    total_speech = format_nominal_speech(total_val)
+                    
+                    return jsonify({
+                        "success": True,
+                        "is_multi": True,
+                        "is_money": True,
+                        "val_left": val_left,
+                        "val_right": val_right,
+                        "nominal_left": f"Rp {val_left:,}".replace(",", "."),
+                        "nominal_right": f"Rp {val_right:,}".replace(",", "."),
+                        "nominal": f"Rp {total_val:,}".replace(",", "."),
+                        "numeric_value": total_val,
+                        "confidence": avg_conf,
+                        "speech_text": f"Dua lembar terdeteksi: {suara_kiri} dan {suara_kanan}. Totalnya {total_speech}.",
+                        "detail_text": f"Lembar 1: Rp {val_left:,} ({round(conf_left)}%) | Lembar 2: Rp {val_right:,} ({round(conf_right)}%)".replace(",", ".")
+                    })
 
         # 3. Prediksi Lembaran Tunggal (Single Banknote)
         if nominal_full == "bukan_uang":
@@ -160,8 +195,10 @@ def predict():
                 "is_multi": False,
                 "nominal": "-",
                 "raw_nominal": "bukan_uang",
+                "numeric_value": 0,
                 "confidence": round(conf_full, 2),
                 "speech_text": "",
+                "speech_nominal": "",
                 "is_money": False
             })
 
@@ -177,11 +214,9 @@ def predict():
             "numeric_value": val_single,
             "confidence": round(conf_full, 2),
             "speech_text": f"{suara_teks}.",
+            "speech_nominal": suara_teks,
             "is_money": True
         })
-
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
 
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500

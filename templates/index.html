@@ -128,233 +128,155 @@ h1{
 
 .subtitle{
   color: var(--text-muted);
-  font-size: 1.05rem;
+  font-size: clamp(0.95rem, 3.2vw, 1.15rem);
   margin-top: 8px;
-  line-height: 1.4;
-  text-shadow: 0 2px 6px rgba(0,0,0,0.5);
+  line-height: 1.5;
 }
 
 main{
-  width: 100%;
-  max-width: 560px;
-  padding: 10px 16px 0;
+  width: 92%;
+  max-width: 500px;
   display: flex;
   flex-direction: column;
   gap: 16px;
+  margin-top: 8px;
 }
 
 .panel{
   background: var(--card-bg);
-  backdrop-filter: blur(10px);
-  border: 2px solid var(--line-gold);
+  border: 1.5px solid var(--line-gold);
   border-radius: 20px;
-  padding: 20px;
-  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.5);
+  padding: 18px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .hint{
-  border-left: 6px solid var(--gold);
   font-size: 0.95rem;
-  line-height: 1.5;
-  background: rgba(38, 10, 32, 0.9);
-  border-radius: 12px;
-  padding: 14px 18px;
+  color: var(--text-muted);
+  line-height: 1.45;
+  text-align: center;
+  border-left: 4px solid var(--gold);
+  background: rgba(45, 12, 38, 0.75);
 }
 
-/* ─── BINGKAI KAMERA ────────────────────────────────────────── */
+/* ─── VIEWPORT KAMERA ──────────────────────────────────────── */
 .viewport{
+  position: relative;
   width: 100%;
-  aspect-ratio: 4 / 3;
-  background: #0d0211;
+  aspect-ratio: 4/3;
+  background: #0f0212;
   border-radius: 14px;
   overflow: hidden;
-  position: relative;
-  border: 3px solid var(--gold);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 25px rgba(255, 209, 102, 0.25);
+  border: 2px solid rgba(255, 209, 102, 0.3);
 }
 
-video, #preview{ width: 100%; height: 100%; }
-video{ object-fit: cover; }
-#preview{ object-fit: contain; }
+video, img#preview{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 
+/* Kotak Penargetan Uang */
 .target{
   position: absolute;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  width: 80%; height: 52%;
-  border: 3px dashed var(--gold);
+  width: 78%;
+  height: 52%;
+  border: 2px dashed var(--gold);
   border-radius: 12px;
-  box-shadow: 0 0 0 9999px rgba(10, 2, 14, 0.65);
+  box-shadow: 0 0 0 9999px rgba(15, 2, 18, 0.65), 0 0 15px var(--gold-glow);
   pointer-events: none;
   display: flex;
   align-items: flex-end;
   justify-content: center;
   padding-bottom: 8px;
-  z-index: 5;
-  overflow: hidden;
 }
 
 .target span{
-  background: rgba(25, 6, 32, 0.92);
+  background: rgba(25, 3, 23, 0.85);
   color: var(--gold);
-  font-size: 0.85rem;
-  font-weight: 800;
-  padding: 4px 14px;
-  border-radius: 8px;
-  border: 1px solid var(--gold);
-  z-index: 6;
+  font-size: 0.75rem;
+  font-weight: 700;
   letter-spacing: 0.5px;
+  padding: 3px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--line-gold);
 }
 
 .scan-bar{
   position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 4px;
-  background: linear-gradient(90deg, transparent, #FFD166, #FF9F1C, #FFD166, transparent);
-  box-shadow: 0 0 15px #FFD166;
-  animation: scanBatik 2.2s ease-in-out infinite;
+  top: 0; left: 0; width: 100%; height: 3px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  box-shadow: 0 0 10px var(--gold);
+  animation: scanAnim 2.2s ease-in-out infinite alternate;
 }
-@keyframes scanBatik{
-  0%{ top: 0%; opacity: 0.4; }
-  50%{ top: 94%; opacity: 1; }
-  100%{ top: 0%; opacity: 0.4; }
+@keyframes scanAnim{
+  0%{ top: 4%; opacity: 0.3; }
+  50%{ opacity: 1; }
+  100%{ top: 96%; opacity: 0.3; }
 }
 
 .placeholder{
   color: var(--text-muted);
   text-align: center;
-  padding: 20px;
-  font-size: 1rem;
+  font-size: 0.95rem;
+  padding: 16px;
+  line-height: 1.5;
 }
 
-/* ─── TOMBOL POLOS TANPA IKON ───────────────────────────────── */
+/* ─── TOMBOL AKSI ──────────────────────────────────────────── */
 .btns{
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: 10px;
 }
 
 button{
-  min-height: 54px;
-  background: #42132d;
+  background: rgba(45, 12, 38, 0.85);
   color: var(--text-light);
-  border: 2px solid var(--line-gold);
-  padding: 12px 14px;
-  font-size: 1.05rem;
-  font-weight: 800;
-  border-radius: 14px;
+  border: 1.5px solid var(--line-gold);
+  padding: 14px 10px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.95rem;
   cursor: pointer;
-  transition: all .2s ease;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-  letter-spacing: 0.3px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 52px;
 }
 button:hover{
-  background: #5d1b3f;
+  background: rgba(70, 18, 50, 0.95);
   border-color: var(--gold);
-  transform: translateY(-2px);
+  box-shadow: 0 0 12px var(--gold-glow);
+  transform: translateY(-1px);
+}
+button:active{
+  transform: translateY(1px);
 }
 
-button.btn-main{
+.btn-main{
   grid-column: span 2;
-  min-height: 68px;
-  font-size: 1.3rem;
-  background: linear-gradient(135deg, #FFD166 0%, #FF9F1C 100%);
-  color: #210814;
-  border: 2px solid #FFF8E7;
-  box-shadow: 0 6px 20px rgba(255, 159, 28, 0.4);
-}
-button.btn-main:hover{
-  background: linear-gradient(135deg, #FFE299 0%, #FFB03B 100%);
-}
-
-button.cam-active{
-  background: linear-gradient(135deg, #C1121F 0%, #780000 100%) !important;
-  color: #FFF !important;
-  border-color: #FFA69E !important;
-}
-
-.status{
-  font-size: 1rem;
-  color: var(--text-muted);
-  text-align: center;
-  min-height: 1.5em;
-  font-weight: 600;
-  text-shadow: 0 1px 4px rgba(0,0,0,0.6);
-}
-
-/* ─── KARTU HASIL DETEKSI (DYNAMIC COLOR) ───────────────────── */
-.result{
-  border: 3px solid var(--denom);
-  background: radial-gradient(circle at top, rgba(66, 13, 42, 0.95), rgba(18, 4, 24, 0.95));
-  border-radius: 20px;
-  padding: 22px;
-  text-align: center;
-  min-height: 180px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 6px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.6), 0 0 25px rgba(255, 209, 102, 0.2);
-  transition: border-color .4s ease;
-}
-
-.result-title{
-  font-size: 0.95rem;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  font-weight: 700;
-}
-
-.nominal{
-  font-size: clamp(2.8rem, 14vw, 4.6rem);
-  font-weight: 900;
-  line-height: 1.1;
-  color: var(--denom);
-  text-shadow: 0 3px 15px rgba(0,0,0,0.8);
-}
-
-.conf{
+  background: linear-gradient(135deg, var(--amber) 0%, #d84a1b 100%);
+  color: #fff;
+  border: none;
   font-size: 1.1rem;
-  color: var(--text-light);
-  font-weight: 600;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 18px rgba(255, 159, 28, 0.45);
 }
-
-.warn{
-  display: none;
-  background: #FFB703;
-  color: #1a0800;
-  font-weight: 800;
-  padding: 8px 16px;
-  border-radius: 8px;
-  font-size: 0.95rem;
-  margin-top: 4px;
+.btn-main:hover{
+  background: linear-gradient(135deg, #ffb03a 0%, #e65524 100%);
+  box-shadow: 0 6px 24px rgba(255, 159, 28, 0.65);
 }
-.result.low .warn{ display: block; }
-
-.speaking{
-  display: none;
-  font-size: 1rem;
-  color: var(--gold);
-  font-weight: 700;
-}
-
-.debug{
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  margin-top: 8px;
-}
-.debug span{ font-size: 0.85rem; color: var(--text-muted); }
-.debug img{
-  width: 140px; height: 80px;
-  object-fit: cover;
-  border-radius: 8px;
+button.cam-active{
+  background: linear-gradient(135deg, var(--crimson) 0%, #7d0a13 100%);
+  box-shadow: 0 4px 18px rgba(193, 18, 31, 0.5);
   border: 2px solid var(--gold);
 }
 
@@ -368,11 +290,18 @@ button.cam-active{
   border: 1.5px solid var(--gold);
   border-radius: 999px;
   padding: 8px 18px;
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   color: var(--gold);
   font-weight: 700;
   box-shadow: 0 0 15px rgba(255, 209, 102, 0.25);
   margin-bottom: 4px;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s ease;
+}
+.voice-bar:hover{
+  background: rgba(50, 15, 52, 0.95);
+  box-shadow: 0 0 20px rgba(255, 209, 102, 0.4);
 }
 .mic-dot{
   width: 12px;
@@ -414,6 +343,13 @@ button.cam-active{
 .accum-count{
   font-size: 0.95rem;
   color: var(--text-light);
+  font-weight: 600;
+}
+.accum-details{
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+  min-height: 20px;
 }
 button.active-mode{
   background: linear-gradient(135deg, #0d9488 0%, #115e59 100%) !important;
@@ -425,37 +361,127 @@ button.active-mode{
 /* ─── LEGENDA PECAHAN RUPIAH ────────────────────────────────── */
 .legend-title{
   font-size: 0.95rem;
-  color: var(--text-muted);
-  text-align: center;
+  color: var(--gold);
+  font-weight: 800;
   margin-bottom: 12px;
-  font-weight: 700;
+  text-align: center;
+  letter-spacing: 0.5px;
 }
 .legend{
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
   gap: 8px;
-  justify-content: center;
+  font-size: 0.85rem;
 }
 .legend span{
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 0.9rem;
-  font-weight: 700;
   color: var(--text-light);
-  background: rgba(28, 7, 34, 0.7);
-  border: 1px solid var(--line-gold);
-  border-radius: 999px;
-  padding: 5px 12px 5px 8px;
+  font-weight: 600;
 }
-.legend b{ width: 14px; height: 14px; border-radius: 50%; display: inline-block; }
+.legend b{
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  display: inline-block;
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.5);
+}
+
+/* ─── KOTAK HASIL PREDIKSI ─────────────────────────────────── */
+.result{
+  background: rgba(25, 3, 23, 0.92);
+  border: 2px solid var(--denom);
+  border-radius: 18px;
+  padding: 22px 16px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 0 28px rgba(0, 0, 0, 0.6);
+  transition: border-color 0.4s ease;
+}
+
+.result-title{
+  font-size: 0.85rem;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.nominal{
+  font-size: clamp(2.4rem, 9vw, 3.4rem);
+  font-weight: 900;
+  color: var(--denom);
+  letter-spacing: 1px;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.8);
+  transition: color 0.4s ease;
+}
+
+.conf{
+  font-size: 0.95rem;
+  color: var(--text-light);
+  font-weight: 600;
+}
+
+.warn{
+  display: none;
+  background: rgba(193, 18, 31, 0.3);
+  border: 1px solid var(--crimson);
+  color: #ffb4b4;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+.result.low .warn{ display: block; }
+
+.status{
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  min-height: 22px;
+}
+
+.speaking{
+  display: none;
+  font-size: 0.85rem;
+  color: var(--gold);
+  font-style: italic;
+}
+
+.debug{
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed rgba(255, 209, 102, 0.3);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+.debug img{
+  width: 90px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--gold);
+}
+
+footer{
+  margin-top: 24px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
 
 canvas, input[type=file]{ display: none; }
 </style>
 </head>
 <body>
 
-<!-- Latar Belakang Seni Nusantara Bergerak -->
 <div class="batik-bg-layer" aria-hidden="true"></div>
 <div class="indonesia-skyline" aria-hidden="true"></div>
 <div class="cloud cloud1" aria-hidden="true"></div>
@@ -469,7 +495,7 @@ canvas, input[type=file]{ display: none; }
 
 <main>
   <!-- Bar Indikator Perintah Suara Ramah Tunanetra -->
-  <div class="voice-bar" id="voiceBar">
+  <div class="voice-bar" id="voiceBar" title="Ketuk untuk memulai/mengulang perintah suara">
     <div class="mic-dot"></div>
     <span id="voiceStatusText">Mendengarkan... Katakan "Buka Kamera"</span>
   </div>
@@ -482,7 +508,8 @@ canvas, input[type=file]{ display: none; }
   <div class="panel accum-panel" id="accumPanel" style="display:none;" aria-live="polite">
     <div class="accum-title">Penjumlahan Dua Lembar Uang</div>
     <div class="accum-val" id="accumTotal">Rp 0</div>
-    <div class="accum-count" id="accumCount">Menunggu uang... (0/2 lembar)</div>
+    <div class="accum-count" id="accumCount">Menunggu lembar ke-1 (0/2 lembar)</div>
+    <div class="accum-details" id="accumDetails">Arahkan lembar pertama ke kamera</div>
   </div>
 
   <div class="panel">
@@ -544,41 +571,91 @@ const $ = id => document.getElementById(id);
 const video=$('camera'), preview=$('preview'), placeholder=$('placeholder'), target=$('target');
 const btnCam=$('btnCam'), btnUpload=$('btnUpload'), btnVoice=$('btnVoice'), fileInput=$('fileInput');
 const btnCountMode=$('btnCountMode'), btnResetCount=$('btnResetCount');
-const accumPanel=$('accumPanel'), accumTotalEl=$('accumTotal'), accumCountEl=$('accumCount');
-const voiceStatusText=$('voiceStatusText');
+const accumPanel=$('accumPanel'), accumTotalEl=$('accumTotal'), accumCountEl=$('accumCount'), accumDetailsEl=$('accumDetails');
+const voiceBar=$('voiceBar'), voiceStatusText=$('voiceStatusText');
 const canvas=$('canvas'), resultBox=$('result'), nominalEl=$('nominal'), confEl=$('conf'), speakingEl=$('speaking');
 const debugBox=$('debug'), debugImg=$('debugImg'), statusEl=$('status');
 
-const CONFIDENCE_THRESHOLD = 90;
-const SCAN_INTERVAL_MS = 1500;
-const DENOM_COLORS = {1000:'#C9C04A',2000:'#9AA5B1',5000:'#C4905C',10000:'#A678E8',20000:'#4DBE7A',50000:'#4A90E2',75000:'#E8707C',100000:'#E04A4F'};
+const CONFIDENCE_THRESHOLD = 75;
+const SCAN_INTERVAL_MS = 1800; // Interval stabil (1.8 detik)
+const SAME_NOMINAL_COOLDOWN_MS = 5000; // Diam 5 detik jika uang yang sama masih di depan kamera
 
-let isCameraActive=false, stream=null, voiceOn=true, busy=false, objectUrl=null;
-let autoScanTimer=null;
-let lastSpokenNominal=null;
-let lastSpokenTime=0;
+const DENOM_COLORS = {
+  1000: '#C9C04A',
+  2000: '#9AA5B1',
+  5000: '#C4905C',
+  10000: '#A678E8',
+  20000: '#4DBE7A',
+  50000: '#4A90E2',
+  75000: '#E8707C',
+  100000: '#E04A4F'
+};
 
-// State Mode Hitung 2 Lembar Uang
+let isCameraActive = false, stream = null, voiceOn = true, busy = false, objectUrl = null;
+let autoScanTimer = null;
+let lastSpokenNominal = null;
+let lastSpokenTime = 0;
+let isSpeaking = false; // Flag pengunci suara agar tidak pernah terpotong
+
+// State Machine Mode Hitung 2 Lembar
+// Nilai: 'idle' | 'waiting_first' | 'speaking_first' | 'waiting_transition' | 'waiting_second' | 'speaking_second' | 'completed'
 let countMode = false;
+let countState = 'idle';
 let countedPair = []; // Menyimpan [lembar1, lembar2]
+let transitionTimer = null;
+
+// Stabilisasi frame deteksi (minimal 2 frame berturut-turut untuk menghindari salah baca sesaat)
+let candidateNominal = null;
+let candidateCount = 0;
 
 function setStatus(msg){ statusEl.textContent = msg; }
 function vibrate(p){ if(navigator.vibrate) navigator.vibrate(p); }
 
-// ─── FITUR SUARA (TTS) ──────────────────────────────────────────
-function speak(text){
-  if(!voiceOn || !('speechSynthesis' in window)) return;
-  speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang='id-ID'; u.rate=0.95;
-  u.onstart=()=>{ speakingEl.style.display='block'; };
-  u.onend=u.onerror=()=>{ speakingEl.style.display='none'; };
-  speechSynthesis.speak(u);
+// ─── FITUR SUARA (TTS TAHAN POTONG) ──────────────────────────────
+function speak(text, onComplete = null){
+  if(!voiceOn || !('speechSynthesis' in window) || !text){
+    if(onComplete) onComplete();
+    return;
+  }
+  try{
+    speechSynthesis.cancel();
+    isSpeaking = true;
+    speakingEl.style.display = 'block';
+
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'id-ID';
+    u.rate = 1.0;
+    u.pitch = 1.0;
+
+    let isDone = false;
+    const finishHandler = () => {
+      if(isDone) return;
+      isDone = true;
+      isSpeaking = false;
+      speakingEl.style.display = 'none';
+      if(onComplete) onComplete();
+    };
+
+    u.onend = finishHandler;
+    u.onerror = finishHandler;
+
+    // Pengaman jika browser memakan event onend
+    setTimeout(() => {
+      if(!isDone) finishHandler();
+    }, 7000);
+
+    speechSynthesis.speak(u);
+  }catch(e){
+    console.warn("TTS error:", e);
+    isSpeaking = false;
+    speakingEl.style.display = 'none';
+    if(onComplete) onComplete();
+  }
 }
 
-btnVoice.addEventListener('click',()=>{
-  voiceOn=!voiceOn;
-  btnVoice.setAttribute('aria-pressed',voiceOn);
+btnVoice.addEventListener('click', () => {
+  voiceOn = !voiceOn;
+  btnVoice.setAttribute('aria-pressed', voiceOn);
   btnVoice.textContent = 'Suara: ' + (voiceOn ? 'Aktif' : 'Mati');
   if(!voiceOn && 'speechSynthesis' in window) speechSynthesis.cancel();
   setStatus(voiceOn ? 'Suara otomatis diaktifkan.' : 'Suara otomatis dimatikan.');
@@ -603,116 +680,194 @@ function formatRupiahSpeech(num){
     150000: "seratus lima puluh ribu rupiah", 175000: "seratus tujuh puluh lima ribu rupiah",
     200000: "dua ratus ribu rupiah"
   };
-  return bilang[num] || ('Rp ' + num.toLocaleString('id-ID') + ' rupiah');
+  return bilang[num] || ('Rp ' + Number(num).toLocaleString('id-ID') + ' rupiah');
 }
 
-// ─── LOGIKA MODE HITUNG 2 LEMBAR ───────────────────────────────
+// ─── ALUR STATE MACHINE MODE HITUNG 2 LEMBAR ────────────────────
 function toggleCountMode(forceState = null){
   countMode = (forceState !== null) ? forceState : !countMode;
   btnCountMode.textContent = 'Mode Hitung 2 Lembar: ' + (countMode ? 'Aktif' : 'Nonaktif');
+
+  if(transitionTimer){
+    clearInterval(transitionTimer);
+    transitionTimer = null;
+  }
+
   if(countMode){
     btnCountMode.classList.add('active-mode');
     accumPanel.style.display = 'flex';
     resetPairCount(false);
-    speak('Mode hitung dua lembar aktif. Tunjukkan lembar pertama lalu lembar kedua.');
+    countState = 'waiting_first';
+    speak('Mode hitung dua lembar aktif. Silakan arahkan lembar pertama ke kamera.');
   } else {
     btnCountMode.classList.remove('active-mode');
     accumPanel.style.display = 'none';
-    speak('Mode hitung dua lembar dinonaktifkan.');
+    countState = 'idle';
+    countedPair = [];
+    speak('Kembali ke mode normal.');
   }
 }
 btnCountMode.addEventListener('click', () => toggleCountMode());
 
 function resetPairCount(speakFeedback = true){
+  if(transitionTimer){
+    clearInterval(transitionTimer);
+    transitionTimer = null;
+  }
   countedPair = [];
+  countState = countMode ? 'waiting_first' : 'idle';
   lastSpokenNominal = null;
+  candidateNominal = null;
+  candidateCount = 0;
+
   accumTotalEl.textContent = 'Rp 0';
-  accumCountEl.textContent = 'Menunggu uang... (0/2 lembar)';
+  accumCountEl.textContent = 'Menunggu lembar ke-1 (0/2 lembar)';
+  accumDetailsEl.textContent = 'Arahkan lembar pertama ke kamera';
   btnResetCount.textContent = 'Reset Hitung 2 Lembar';
+
   if(speakFeedback){
-    speak('Hitungan dua lembar direset ke nol.');
+    speak('Hitungan dua lembar direset ke nol. Silakan arahkan lembar pertama.');
   }
 }
 btnResetCount.addEventListener('click', () => resetPairCount(true));
+
+// Jeda Transisi 5 Detik Antara Lembar 1 dan Lembar 2
+function startTransitionToSecondBill(){
+  countState = 'waiting_transition';
+  let countdown = 5;
+  accumDetailsEl.textContent = `Tarik uang pertama. Siapkan lembar kedua dalam ${countdown} detik...`;
+
+  transitionTimer = setInterval(() => {
+    countdown--;
+    if(countdown > 0){
+      accumDetailsEl.textContent = `Tarik uang pertama. Siapkan lembar kedua dalam ${countdown} detik...`;
+    } else {
+      clearInterval(transitionTimer);
+      transitionTimer = null;
+      countState = 'waiting_second';
+      accumDetailsEl.textContent = 'Silakan arahkan lembar kedua ke kamera sekarang.';
+      vibrate([100, 50, 100]);
+      speak('Silakan arahkan lembar kedua.');
+    }
+  }, 1000);
+}
 
 // ─── PERINTAH SUARA (WEB SPEECH RECOGNITION API) ────────────────
 const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition = null;
 let isRecognizing = false;
+let userDisabledMic = false;
 
 function setupSpeechRecognition(){
   if(!SpeechRec){
-    voiceStatusText.textContent = 'Browser tidak mendukung perintah suara langsung.';
+    if(voiceStatusText) voiceStatusText.textContent = 'Browser tidak mendukung perintah suara langsung.';
     return;
   }
 
-  recognition = new SpeechRec();
-  recognition.lang = 'id-ID';
-  recognition.continuous = true;
-  recognition.interimResults = false;
-
-  recognition.onstart = () => {
-    isRecognizing = true;
-    voiceStatusText.textContent = 'Mendengarkan... Katakan "Buka Kamera", "Mode Hitung", atau "Reset"';
-  };
-
-  recognition.onresult = (event) => {
-    const transcript = event.results[event.results.length - 1][0].transcript.toLowerCase().trim();
-    console.log("Perintah suara terdeteksi:", transcript);
-    voiceStatusText.textContent = `Mendengar: "${transcript}"`;
-    handleVoiceCommand(transcript);
-  };
-
-  recognition.onerror = (e) => {
-    console.warn("Speech recognition error:", e.error);
-  };
-
-  recognition.onend = () => {
-    isRecognizing = false;
-    // Otomatis aktifkan kembali agar selalu standby mendengarkan tunanetra
-    setTimeout(() => {
-      try { recognition.start(); } catch(err){}
-    }, 600);
-  };
-
   try {
+    recognition = new SpeechRec();
+    recognition.lang = 'id-ID';
+    recognition.continuous = true;
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => {
+      isRecognizing = true;
+      if(voiceStatusText) voiceStatusText.textContent = 'Mendengarkan... Katakan "Buka Kamera", "Mode Hitung", atau "Reset"';
+      if(voiceBar) voiceBar.style.borderColor = 'var(--gold)';
+    };
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[event.results.length - 1][0].transcript;
+      if(voiceStatusText) voiceStatusText.textContent = `Mendengar: "${transcript}"`;
+      handleVoiceCommand(transcript);
+    };
+
+    recognition.onerror = (e) => {
+      console.warn("Speech recognition notice:", e.error);
+      if(e.error === 'not-allowed'){
+        userDisabledMic = true;
+        if(voiceStatusText) voiceStatusText.textContent = 'Izin mikrofon belum aktif. Ketuk di sini untuk aktifkan.';
+      }
+    };
+
+    recognition.onend = () => {
+      isRecognizing = false;
+      if(!userDisabledMic){
+        setTimeout(() => {
+          try {
+            if(!isRecognizing && !userDisabledMic){
+              recognition.start();
+            }
+          } catch(err){}
+        }, 600);
+      }
+    };
+
     recognition.start();
   } catch(e) {
-    console.log("Menunggu interaksi pengguna untuk mic...");
+    console.log("Speech recognition standby, menunggu interaksi pengguna...");
   }
 }
 
-function handleVoiceCommand(cmd){
+function handleVoiceCommand(rawCmd){
+  const cmd = rawCmd.toLowerCase().trim();
+  console.log("Memproses perintah suara:", cmd);
+
   // 1. Kontrol Kamera
-  if(cmd.includes("buka kamera") || cmd.includes("aktifkan kamera") || cmd.includes("nyalakan kamera")){
+  if(cmd.includes("buka kamera") || cmd.includes("aktifkan kamera") || cmd.includes("nyalakan kamera") || cmd.includes("hidupkan kamera") || cmd.includes("start kamera")){
     if(!isCameraActive) toggleCamera();
+    else speak("Kamera sudah aktif.");
   }
-  else if(cmd.includes("tutup kamera") || cmd.includes("matikan kamera") || cmd.includes("stop kamera")){
+  else if(cmd.includes("tutup kamera") || cmd.includes("matikan kamera") || cmd.includes("stop kamera") || cmd.includes("hentikan kamera") || cmd.includes("tutup")){
     if(isCameraActive) toggleCamera();
+    else speak("Kamera sudah mati.");
   }
-  // 2. Kontrol Mode Hitung / Akumulasi
-  else if(cmd.includes("mode hitung") || cmd.includes("hitung uang") || cmd.includes("akumulasi")){
+  // 2. Kontrol Mode Hitung / Penjumlahan 2 Lembar
+  else if(cmd.includes("mode hitung") || cmd.includes("hitung uang") || cmd.includes("penjumlahan") || cmd.includes("tambah") || cmd.includes("hitung dua lembar") || cmd.includes("dua lembar")){
     toggleCountMode(true);
   }
-  else if(cmd.includes("mode normal") || cmd.includes("mode biasa") || cmd.includes("matikan hitung")){
+  else if(cmd.includes("mode normal") || cmd.includes("mode biasa") || cmd.includes("matikan hitung") || cmd.includes("stop hitung") || cmd.includes("selesai hitung")){
     toggleCountMode(false);
   }
   // 3. Reset Total
-  else if(cmd.includes("reset") || cmd.includes("ulang") || cmd.includes("hapus") || cmd.includes("nol")){
-    resetAccumulation();
+  else if(cmd.includes("reset") || cmd.includes("ulang") || cmd.includes("hapus") || cmd.includes("nol") || cmd.includes("hitung ulang")){
+    resetPairCount(true);
   }
   // 4. Tanya Total Saat Ini
-  else if(cmd.includes("berapa total") || cmd.includes("total") || cmd.includes("jumlah")){
-    if(countHistory.length === 0){
-      speak('Belum ada uang yang dihitung.');
+  else if(cmd.includes("berapa total") || cmd.includes("total") || cmd.includes("jumlah") || cmd.includes("total uang") || cmd.includes("berapa jumlah")){
+    if(!countMode){
+      speak('Mode hitung dua lembar belum aktif. Katakan mode hitung untuk mengaktifkan.');
+    } else if(countedPair.length === 0){
+      speak('Belum ada uang yang dihitung. Silakan arahkan lembar pertama.');
+    } else if(countedPair.length === 1){
+      speak(`Lembar pertama bernilai ${formatRupiahSpeech(countedPair[0])}. Menunggu lembar kedua.`);
     } else {
-      speak(`Total hitungan saat ini adalah ${formatRupiahSpeech(accumulatedTotal)} dari ${countHistory.length} lembar uang.`);
+      const total = countedPair[0] + countedPair[1];
+      speak(`Total hitungan dua lembar adalah ${formatRupiahSpeech(total)}.`);
     }
   }
-  // 5. Bantuan
-  else if(cmd.includes("bantuan") || cmd.includes("perintah") || cmd.includes("tolong")){
-    speak('Perintah yang tersedia: buka kamera, tutup kamera, mode hitung, berapa total, dan reset.');
+  // 5. Unggah Gambar / Upload
+  else if(cmd.includes("unggah") || cmd.includes("upload") || cmd.includes("pilih file") || cmd.includes("pilih foto") || cmd.includes("ambil foto")){
+    speak("Membuka pemilihan foto uang.");
+    fileInput.click();
   }
+  // 6. Bantuan
+  else if(cmd.includes("bantuan") || cmd.includes("panduan") || cmd.includes("perintah") || cmd.includes("tolong")){
+    speak('Perintah yang tersedia: buka kamera, tutup kamera, mode hitung, unggah foto, berapa total, dan reset.');
+  }
+}
+
+if(voiceBar){
+  voiceBar.addEventListener('click', () => {
+    userDisabledMic = false;
+    if(recognition && !isRecognizing){
+      try {
+        recognition.start();
+        speak("Mikrofon mendengarkan perintah suara.");
+      } catch(e){}
+    }
+  });
 }
 
 window.addEventListener('load', () => {
@@ -722,8 +877,9 @@ window.addEventListener('load', () => {
   }, 800);
 });
 
-// Izinkan aktivasi mic saat layar disentuh pertama kali (kebijakan browser)
+// Izinkan aktivasi mic saat layar disentuh pertama kali
 document.body.addEventListener('click', () => {
+  userDisabledMic = false;
   if(recognition && !isRecognizing){
     try { recognition.start(); } catch(e){}
   }
@@ -734,16 +890,20 @@ async function toggleCamera(){
   if(!isCameraActive){
     try{
       try{
-        stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}});
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
+        });
       }catch(e){
-        stream = await navigator.mediaDevices.getUserMedia({video:true});
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
       }
-      video.srcObject=stream;
-      video.style.display='block'; target.style.display='flex';
-      preview.style.display='none'; placeholder.style.display='none';
-      btnCam.textContent='Matikan Kamera';
+      video.srcObject = stream;
+      video.style.display = 'block';
+      target.style.display = 'flex';
+      preview.style.display = 'none';
+      placeholder.style.display = 'none';
+      btnCam.textContent = 'Matikan Kamera';
       btnCam.classList.add('cam-active');
-      isCameraActive=true;
+      isCameraActive = true;
       setStatus('Kamera aktif. Dekatkan uang ke kotak pemindai...');
       speak('Kamera aktif. Dekatkan uang ke depan kamera.');
 
@@ -755,67 +915,82 @@ async function toggleCamera(){
     }
   }else{
     stopAutoScan();
-    if(stream) stream.getTracks().forEach(t=>t.stop());
-    video.style.display='none'; target.style.display='none'; placeholder.style.display='block';
-    btnCam.textContent='Aktifkan Kamera Otomatis';
+    if(stream) stream.getTracks().forEach(t => t.stop());
+    video.style.display = 'none';
+    target.style.display = 'none';
+    placeholder.style.display = 'block';
+    btnCam.textContent = 'Aktifkan Kamera Otomatis';
     btnCam.classList.remove('cam-active');
-    isCameraActive=false;
+    isCameraActive = false;
     setStatus('Kamera dimatikan.');
     speak('Kamera dimatikan.');
   }
 }
-btnCam.addEventListener('click',toggleCamera);
-btnUpload.addEventListener('click',()=>fileInput.click());
+btnCam.addEventListener('click', toggleCamera);
+btnUpload.addEventListener('click', () => fileInput.click());
 
-fileInput.addEventListener('change',e=>{
-  const file=e.target.files[0];
+fileInput.addEventListener('change', e => {
+  const file = e.target.files[0];
   if(!file) return;
   if(isCameraActive) toggleCamera();
   if(objectUrl) URL.revokeObjectURL(objectUrl);
-  objectUrl=URL.createObjectURL(file);
-  preview.src=objectUrl;
-  preview.style.display='block'; target.style.display='none'; placeholder.style.display='none';
-  debugBox.style.display='none';
+  objectUrl = URL.createObjectURL(file);
+  preview.src = objectUrl;
+  preview.style.display = 'block';
+  target.style.display = 'none';
+  placeholder.style.display = 'none';
+  debugBox.style.display = 'none';
   setStatus('Menganalisis foto uang...');
   processImageBlob(file, true);
+  fileInput.value = '';
 });
 
 // ─── CROP AREA TARGET & KAMERA ──────────────────────────────────
 function captureCamera(){
-  return new Promise(resolve=>{
-    const vw=video.videoWidth, vh=video.videoHeight;
-    const ew=video.clientWidth, eh=video.clientHeight;
+  return new Promise(resolve => {
+    const vw = video.videoWidth, vh = video.videoHeight;
+    const ew = video.clientWidth, eh = video.clientHeight;
     if(!vw || !vh){ resolve(null); return; }
 
-    const vr=vw/vh, er=ew/eh;
-    let visW,visH,visX,visY;
-    if(vr>er){ visH=vh; visW=vh*er; visX=(vw-visW)/2; visY=0; }
-    else{ visW=vw; visH=vw/er; visX=0; visY=(vh-visH)/2; }
+    const vr = vw / vh, er = ew / eh;
+    let visW, visH, visX, visY;
+    if(vr > er){
+      visH = vh; visW = vh * er; visX = (vw - visW) / 2; visY = 0;
+    } else {
+      visW = vw; visH = vw / er; visX = 0; visY = (vh - visH) / 2;
+    }
 
-    const cw=visW*0.80, ch=visH*0.52;
-    const sx=visX+(visW-cw)/2, sy=visY+(visH-ch)/2;
+    const cw = visW * 0.80, ch = visH * 0.52;
+    const sx = visX + (visW - cw) / 2, sy = visY + (visH - ch) / 2;
 
-    canvas.width=512; canvas.height=512;
-    const ctx=canvas.getContext('2d');
-    ctx.drawImage(video,sx,sy,cw,ch,0,0,512,512);
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, sx, sy, cw, ch, 0, 0, 512, 512);
 
-    debugImg.src=canvas.toDataURL('image/jpeg');
-    debugBox.style.display='flex';
+    debugImg.src = canvas.toDataURL('image/jpeg');
+    debugBox.style.display = 'flex';
 
-    canvas.toBlob(blob=>resolve(blob),'image/jpeg',0.95);
+    canvas.toBlob(blob => resolve(blob), 'image/jpeg', 0.95);
   });
 }
 
 function setDenomColor(nominalStr){
-  const value=Number(String(nominalStr).replace(/\D/g,''));
+  const value = Number(String(nominalStr).replace(/\D/g, ''));
   resultBox.style.setProperty('--denom', DENOM_COLORS[value] || '#FFD166');
 }
 
-// ─── AUTO-SCAN INTERVAL ─────────────────────────────────────────
+// ─── AUTO-SCAN INTERVAL YANG AMAN DARI INTERUPSI SUARA ───────────
 function startAutoScan(){
   if(autoScanTimer) clearInterval(autoScanTimer);
-  autoScanTimer = setInterval(async ()=>{
-    if(!isCameraActive || busy) return;
+  autoScanTimer = setInterval(async () => {
+    // JANGAN lakukan scan jika kamera tidak aktif, sedang memproses request,
+    // atau SEDANG BERBICARA (isSpeaking / speechSynthesis.speaking aktif)
+    if(!isCameraActive || busy || isSpeaking || window.speechSynthesis.speaking) return;
+
+    // Khusus Mode Hitung: jika perhitungan 2/2 sudah lengkap, atau sedang masa jeda 5 detik, jangan scan
+    if(countMode && (countState === 'completed' || countState === 'waiting_transition' || countState === 'speaking_first' || countState === 'speaking_second')) return;
+
     const blob = await captureCamera();
     if(blob){
       await processImageBlob(blob, false);
@@ -826,91 +1001,141 @@ function startAutoScan(){
 function stopAutoScan(){
   if(autoScanTimer){
     clearInterval(autoScanTimer);
-    autoScanTimer=null;
+    autoScanTimer = null;
   }
 }
 
 // ─── PENCOCOKAN NILAI RUPIAH & HITUNG AKUMULASI ─────────────────
-async function processImageBlob(blob, forceSpeak=false){
-  busy=true;
-  const fd=new FormData();
+async function processImageBlob(blob, forceSpeak = false){
+  if(busy) return;
+  busy = true;
+  const fd = new FormData();
   fd.append('image', blob, 'rupiah_input.jpg');
+  fd.append('mode', countMode ? 'dual' : 'single');
 
   try{
-    const res=await fetch('/predict',{method:'POST',body:fd});
-    const data=await res.json();
+    const res = await fetch('/predict', { method: 'POST', body: fd });
+    const data = await res.json();
 
     if(data.success){
-      const conf=Number(data.confidence);
-      const isMoney = data.is_money !== false;  // false hanya jika "bukan_uang"
+      const conf = Number(data.confidence);
+      const isMoney = (data.is_money !== false && data.raw_nominal !== 'bukan_uang');
 
-      // Jika bukan uang, tampilkan status menunggu dan JANGAN bicara
+      // Jika bukan uang:
       if(!isMoney){
-        nominalEl.textContent='-';
-        confEl.textContent='Tidak ada uang terdeteksi';
+        candidateNominal = null;
+        candidateCount = 0;
+        nominalEl.textContent = '-';
+        confEl.textContent = 'Tidak ada uang terdeteksi';
         resultBox.classList.remove('low');
         setDenomColor('0');
         setStatus('Arahkan uang ke dalam kotak pemindai...');
-        lastSpokenNominal = null;  // reset agar saat uang muncul, langsung bicara
-        busy=false;
+        busy = false;
         return;
       }
 
+      // ─── STABILISASI FRAME DETEKSI ───
+      // Agar tidak mudah salah tebak karena goyangan sesaat pada kamera,
+      // periksa apakah nominal yang sama terbaca minimal 2 frame berturut-turut (kecuali forceSpeak / conf >= 96%)
+      if(!forceSpeak && conf < 96.0){
+        if(candidateNominal === data.nominal){
+          candidateCount++;
+        } else {
+          candidateNominal = data.nominal;
+          candidateCount = 1;
+        }
+        if(candidateCount < 2){
+          // Belum stabil, tunggu 1 frame lagi
+          busy = false;
+          return;
+        }
+      }
+
+      // Tampilkan hasil pengenalan visual
       setDenomColor(data.nominal);
-      nominalEl.textContent=data.nominal;
-      confEl.textContent='Akurasi: '+data.confidence+'%';
+      nominalEl.textContent = data.nominal;
+      confEl.textContent = 'Akurasi: ' + data.confidence + '%';
+      resultBox.classList.remove('low');
+      setStatus('Uang dikenali: ' + data.nominal);
 
       const now = Date.now();
       const isNewNominal = (data.nominal !== lastSpokenNominal);
-      const isCooldownPassed = (now - lastSpokenTime > 3500);
+      const isCooldownPassed = (now - lastSpokenTime > SAME_NOMINAL_COOLDOWN_MS);
 
-      if(conf >= CONFIDENCE_THRESHOLD){
-        resultBox.classList.remove('low');
-        setStatus('Uang dikenali: ' + data.nominal);
-
-        if(forceSpeak || isNewNominal || isCooldownPassed){
+      // ─── JIKA MODE HITUNG 2 LEMBAR AKTIF ───
+      if(countMode){
+        // KASUS A: Foto unggahan berisi 2 lembar berdampingan sekaligus
+        if(data.is_multi){
+          countedPair = [data.val_left, data.val_right];
+          countState = 'completed';
+          const total = data.numeric_value;
+          accumTotalEl.textContent = `Rp ${total.toLocaleString('id-ID')}`;
+          accumCountEl.textContent = 'Perhitungan Selesai (2/2 lembar)';
+          accumDetailsEl.textContent = `Lembar 1: ${data.nominal_left} + Lembar 2: ${data.nominal_right} = Rp ${total.toLocaleString('id-ID')}`;
+          btnResetCount.textContent = `Reset Hitungan (Total Rp ${total.toLocaleString('id-ID')})`;
+          lastSpokenNominal = data.nominal;
+          lastSpokenTime = now;
+          vibrate([150, 100, 150]);
+          speak(`Dua lembar terdeteksi. Lembar satu ${formatRupiahSpeech(data.val_left)}, lembar dua ${formatRupiahSpeech(data.val_right)}. Totalnya ${formatRupiahSpeech(total)}.`);
+        }
+        // KASUS B: Menunggu Lembar Pertama (0/2)
+        else if(countState === 'waiting_first' || countedPair.length === 0){
+          countedPair = [data.numeric_value];
+          countState = 'speaking_first';
+          accumTotalEl.textContent = `Rp ${data.numeric_value.toLocaleString('id-ID')}`;
+          accumCountEl.textContent = 'Lembar ke-1 tercatat (1/2 lembar)';
+          accumDetailsEl.textContent = `Lembar 1: ${data.nominal} | Siapkan lembar kedua...`;
+          btnResetCount.textContent = `Reset Hitungan (Lembar 1: ${data.nominal})`;
           lastSpokenNominal = data.nominal;
           lastSpokenTime = now;
           vibrate(150);
 
-          // JIKA MODE HITUNG AKTIF: Akumulasikan ke total
-          if(countMode){
-            let addedVal = 0;
-            if(data.is_multi && data.items){
-              data.items.forEach(nom => {
-                const n = parseInt(nom);
-                accumulatedTotal += n;
-                countHistory.push(n);
-                addedVal += n;
-              });
-            } else if(data.numeric_value){
-              accumulatedTotal += data.numeric_value;
-              countHistory.push(data.numeric_value);
-              addedVal = data.numeric_value;
-            }
+          // Bicara sampai selesai, lalu mulai jeda transisi 5 detik yang nyaman
+          speak(`Lembar pertama: ${data.speech_nominal || data.nominal}. Tarik uang pertama, lalu siapkan lembar kedua.`, () => {
+            startTransitionToSecondBill();
+          });
+        }
+        // KASUS C: Menunggu Lembar Kedua (1/2)
+        else if(countState === 'waiting_second' && countedPair.length === 1){
+          countedPair.push(data.numeric_value);
+          countState = 'completed';
+          const total = countedPair[0] + countedPair[1];
+          accumTotalEl.textContent = `Rp ${total.toLocaleString('id-ID')}`;
+          accumCountEl.textContent = 'Perhitungan Selesai (2/2 lembar)';
+          accumDetailsEl.textContent = `Lembar 1: Rp ${countedPair[0].toLocaleString('id-ID')} + Lembar 2: Rp ${countedPair[1].toLocaleString('id-ID')} = Rp ${total.toLocaleString('id-ID')}`;
+          btnResetCount.textContent = `Reset Hitungan (Total Rp ${total.toLocaleString('id-ID')})`;
+          lastSpokenNominal = data.nominal;
+          lastSpokenTime = now;
+          vibrate([200, 100, 200]);
 
-            // Update UI Akumulasi
-            accumTotalEl.textContent = `Rp ${accumulatedTotal.toLocaleString('id-ID')}`;
-            accumCountEl.textContent = `${countHistory.length} lembar uang dihitung`;
-            btnResetCount.textContent = `Reset Total: Rp ${accumulatedTotal.toLocaleString('id-ID')}`;
-
-            // Bacakan hasil pengenalan lembar + total terkumpul
-            const totalText = formatRupiahSpeech(accumulatedTotal);
-            speak(`${data.speech_text} Total hitungan saat ini ${totalText}.`);
-          } else {
-            // Mode normal (bukan hitung akumulasi)
-            speak(data.speech_text || data.nominal);
+          // Bacakan lembar kedua + total akhir secara tuntas
+          speak(`Lembar kedua: ${data.speech_nominal || data.nominal}. Total dua lembar adalah ${formatRupiahSpeech(total)}.`);
+        }
+        // KASUS D: Sudah selesai (2/2)
+        else if(countState === 'completed'){
+          if(forceSpeak){
+            speak(`Perhitungan dua lembar sudah selesai dengan total ${formatRupiahSpeech(countedPair[0] + countedPair[1])}. Ucapkan reset untuk menghitung kembali.`);
           }
         }
-      } else {
-        resultBox.classList.add('low');
-        setStatus('Sedang memindai... Letakkan uang tepat di dalam kotak.');
+      }
+      // ─── MODE NORMAL (LEMBAR TUNGGAL) ───
+      else {
+        // Hanya bersuara jika:
+        // 1. Tombol paksa (misal unggah gambar)
+        // 2. Nominal baru (berbeda dari sebelumnya dan suara sebelumnya sudah beres)
+        // 3. Nominal sama tetapi sudah lewat 5 detik agar tidak berisik mengulang-ulang
+        if(forceSpeak || (isNewNominal && !isSpeaking) || (isCooldownPassed && !isSpeaking)){
+          lastSpokenNominal = data.nominal;
+          lastSpokenTime = now;
+          vibrate(150);
+          speak(data.speech_text || data.nominal);
+        }
       }
     }
   }catch(err){
-    console.error(err);
+    console.error("Error processImageBlob:", err);
   }finally{
-    busy=false;
+    busy = false;
   }
 }
 </script>
