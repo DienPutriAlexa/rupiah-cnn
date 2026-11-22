@@ -20,6 +20,7 @@ Cara Pakai:
 """
 
 import os
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 import argparse
 from pathlib import Path
 import matplotlib.pyplot as plt
@@ -34,10 +35,10 @@ BATCH_SIZE       = 32
 INITIAL_EPOCHS   = 15   # Epoch untuk Feature Extraction
 FINE_TUNE_EPOCHS = 10   # Epoch tambahan untuk Fine-Tuning
 TOTAL_EPOCHS     = INITIAL_EPOCHS + FINE_TUNE_EPOCHS
-NUM_CLASSES      = 8
+NUM_CLASSES      = 9    # 8 nominal uang + 1 kelas bukan_uang
 # ───────────────────────────────────────────────────────────────────
 
-def build_transfer_learning_model(input_shape=(128, 128, 3), num_classes=8):
+def build_transfer_learning_model(input_shape=(128, 128, 3), num_classes=9):
     """
     Membangun model Transfer Learning dengan backbone MobileNetV2.
     MobileNetV2 dipilih karena sangat efisien (arsitektur Inverted Residuals &
@@ -119,16 +120,16 @@ def train(data_dir: Path, output_dir: Path):
     models_dir.mkdir(parents=True, exist_ok=True)
 
     print("\n" + "="*65)
-    print("  🚀 PIPELINE DATA AUGMENTATION (TRANSFER LEARNING)")
+    print("PIPELINE DATA AUGMENTATION (TRANSFER LEARNING)")
     print("="*65)
 
     # Catatan: Normalisasi dilakukan oleh preprocess_input di dalam layer model
     train_datagen = tf.keras.preprocessing.image.ImageDataGenerator(
-        rotation_range=15,
-        width_shift_range=0.1,
-        height_shift_range=0.1,
-        zoom_range=0.1,
-        brightness_range=[0.8, 1.2],
+        rotation_range=20,
+        width_shift_range=0.15,
+        height_shift_range=0.15,
+        zoom_range=0.15,
+        brightness_range=[0.7, 1.3],
         horizontal_flip=True,
         fill_mode='nearest'
     )
@@ -158,7 +159,7 @@ def train(data_dir: Path, output_dir: Path):
     # FASE 1: FEATURE EXTRACTION
     # ─────────────────────────────────────────────────────────────
     print("\n" + "="*65)
-    print("  🧠 [FASE 1] MEMBANGUN MODEL: FEATURE EXTRACTION (FREEZING)")
+    print("[FASE 1] MEMBANGUN MODEL: FEATURE EXTRACTION (FREEZING)")
     print("="*65)
     model, base_model = build_transfer_learning_model((IMG_HEIGHT, IMG_WIDTH, 3), NUM_CLASSES)
     
@@ -194,7 +195,7 @@ def train(data_dir: Path, output_dir: Path):
     ]
 
     print("\n" + "="*65)
-    print("  🏋️ [FASE 1] TRAINING CLASSIFICATION HEAD (15 Epochs)")
+    print("[FASE 1] TRAINING CLASSIFICATION HEAD (15 Epochs)")
     print("="*65)
     history_initial = model.fit(
         train_generator,
@@ -207,7 +208,7 @@ def train(data_dir: Path, output_dir: Path):
     # FASE 2: FINE-TUNING
     # ─────────────────────────────────────────────────────────────
     print("\n" + "="*65)
-    print("  🔥 [FASE 2] UNFREEZING TOP LAYERS UNTUK FINE-TUNING")
+    print("[FASE 2] UNFREEZING TOP LAYERS UNTUK FINE-TUNING")
     print("="*65)
     # Buka unfreeze pada 30 layer teratas MobileNetV2
     base_model.trainable = True
@@ -225,7 +226,7 @@ def train(data_dir: Path, output_dir: Path):
     print(f"Layer yang di-unfreeze : {len(base_model.layers) - fine_tune_at} layer teratas")
 
     print("\n" + "="*65)
-    print("  🏋️ [FASE 2] TRAINING FINE-TUNING (10 Epochs Tambahan)")
+    print("[FASE 2] TRAINING FINE-TUNING (10 Epochs Tambahan)")
     print("="*65)
     history_fine = model.fit(
         train_generator,
@@ -238,7 +239,7 @@ def train(data_dir: Path, output_dir: Path):
     # Simpan grafik gabungan
     plot_combined_history(history_initial, history_fine, models_dir)
     print("\n" + "="*65)
-    print("  ✅ PIPELINE TRANSFER LEARNING LENGKAP SELESAI!")
+    print("PIPELINE TRANSFER LEARNING LENGKAP SELESAI!")
     print(f"  Model bobot terbaik tersimpan di: {best_model_path}")
     print("="*65)
 

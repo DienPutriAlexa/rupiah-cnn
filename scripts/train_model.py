@@ -15,6 +15,7 @@ Cara Pakai:
 """
 
 import os
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'  # Hindari memory issue pada MKL/oneDNN di CPU
 import argparse
 from pathlib import Path
 import matplotlib.pyplot as plt
@@ -27,10 +28,10 @@ IMG_HEIGHT  = 128
 IMG_WIDTH   = 128
 BATCH_SIZE  = 32
 EPOCHS      = 25
-NUM_CLASSES = 8
+NUM_CLASSES = 9  # 8 nominal uang + 1 kelas "bukan_uang"
 # ───────────────────────────────────────────────────────────────────
 
-def build_custom_cnn(input_shape=(128, 128, 3), num_classes=8):
+def build_custom_cnn(input_shape=(128, 128, 3), num_classes=9):
     """
     Arsitektur Custom CNN 4-Blok Konvolusi yang dirancang efisien
     khusus untuk klasifikasi Rupiah pada CPU/Cloud Server (PythonAnywhere).
@@ -100,7 +101,7 @@ def plot_training_history(history, save_dir: Path):
     plt.tight_layout()
     plt.savefig(save_path, dpi=300)
     plt.close()
-    print(f"📊 Grafik training disimpan di: {save_path}")
+    print(f"Grafik training disimpan di: {save_path}")
 
 def train(data_dir: Path, output_dir: Path):
     train_dir = data_dir / "train"
@@ -109,18 +110,20 @@ def train(data_dir: Path, output_dir: Path):
     models_dir.mkdir(parents=True, exist_ok=True)
 
     print("\n" + "="*60)
-    print("  🚀 MEMPERSIAPKAN DATA & PIPELINE TRAINING")
+    print("MEMPERSIAPKAN DATA & PIPELINE TRAINING")
     print("="*60)
 
     # Data Augmentation & Normalisasi
     train_datagen = tf.keras.preprocessing.image.ImageDataGenerator(
         rescale=1.0/255.0,
-        rotation_range=15,
-        width_shift_range=0.1,
-        height_shift_range=0.1,
-        zoom_range=0.1,
-        brightness_range=[0.8, 1.2],
+        rotation_range=20,
+        width_shift_range=0.15,
+        height_shift_range=0.15,
+        zoom_range=0.2,
+        brightness_range=[0.6, 1.4],
         horizontal_flip=True,
+        shear_range=0.1,
+        channel_shift_range=30,
         fill_mode='nearest'
     )
 
@@ -148,7 +151,7 @@ def train(data_dir: Path, output_dir: Path):
 
     # Build Model
     print("\n" + "="*60)
-    print("  🧠 MEMBANGUN ARSITEKTUR CUSTOM CNN")
+    print("MEMBANGUN ARSITEKTUR CUSTOM CNN")
     print("="*60)
     model = build_custom_cnn((IMG_HEIGHT, IMG_WIDTH, 3), NUM_CLASSES)
     model.compile(
@@ -184,7 +187,7 @@ def train(data_dir: Path, output_dir: Path):
     ]
 
     print("\n" + "="*60)
-    print("  🏋️ MEMULAI PROSES TRAINING (Custom CNN)")
+    print("MEMULAI PROSES TRAINING (Custom CNN)")
     print("="*60)
     history = model.fit(
         train_generator,
@@ -196,7 +199,7 @@ def train(data_dir: Path, output_dir: Path):
     # Simpan grafik & log
     plot_training_history(history, models_dir)
     print("\n" + "="*60)
-    print(f"  ✅ TRAINING SELESAI!")
+    print(f"TRAINING SELESAI!")
     print(f"  Model terbaik disimpan di: {best_model_path}")
     print("="*60)
 

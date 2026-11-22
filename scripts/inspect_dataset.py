@@ -34,7 +34,7 @@ OUTPUT_CSV       = "distribusi_kelas.csv"
 def verifikasi_struktur(dataset_dir: Path):
     """Tampilkan struktur folder dataset."""
     print("\n" + "="*55)
-    print("  📁 VERIFIKASI STRUKTUR FOLDER DATASET")
+    print("VERIFIKASI STRUKTUR FOLDER DATASET")
     print("="*55)
 
     if not dataset_dir.exists():
@@ -52,7 +52,7 @@ def verifikasi_struktur(dataset_dir: Path):
     print(f"Total kelas    : {len(kelas)}\n")
     for k in kelas:
         total = sum(1 for f in k.iterdir() if f.suffix.lower() in VALID_EXTENSIONS)
-        print(f"  📂 {k.name:<20} → {total} gambar")
+        print(f"{k.name:<20} → {total} gambar")
     return kelas
 
 
@@ -62,7 +62,7 @@ def inspeksi_gambar(kelas_dirs: list, hapus_rusak: bool = False):
     Jika hapus_rusak=True, file rusak akan dihapus otomatis.
     """
     print("\n" + "="*55)
-    print("  🔍 INSPEKSI & FILTER GAMBAR RUSAK")
+    print("INSPEKSI & FILTER GAMBAR RUSAK")
     print("="*55)
 
     total_gambar   = 0
@@ -101,17 +101,17 @@ def inspeksi_gambar(kelas_dirs: list, hapus_rusak: bool = False):
                 daftar_rusak.append({"path": str(f), "alasan": alasan})
                 if hapus_rusak:
                     f.unlink()
-                    print(f"\n    🗑️  Dihapus: {f.name} | {alasan}")
+                    print(f"\n    Dihapus: {f.name} | {alasan}")
                 else:
-                    print(f"\n    ⚠️  {f.name} | {alasan}")
+                    print(f"\n    {f.name} | {alasan}")
             else:
                 gambar_valid += 1
 
     print(f"\n  Total gambar diperiksa : {total_gambar}")
-    print(f"  ✅ Gambar valid        : {gambar_valid}")
-    print(f"  ❌ Gambar rusak        : {gambar_rusak}")
+    print(f"  Gambar valid        : {gambar_valid}")
+    print(f"  Gambar rusak        : {gambar_rusak}")
     if gambar_rusak > 0 and not hapus_rusak:
-        print("  ℹ️  Jalankan ulang dengan --hapus untuk menghapus file rusak secara otomatis.")
+        print(" Jalankan ulang dengan --hapus untuk menghapus file rusak secara otomatis.")
 
     return daftar_rusak, total_gambar, gambar_valid, gambar_rusak
 
@@ -119,7 +119,7 @@ def inspeksi_gambar(kelas_dirs: list, hapus_rusak: bool = False):
 def hitung_distribusi(kelas_dirs: list):
     """Hitung jumlah gambar per kelas & tampilkan distribusi."""
     print("\n" + "="*55)
-    print("  📊 DISTRIBUSI DATA PER KELAS")
+    print("   DISTRIBUSI DATA PER KELAS")
     print("="*55)
 
     distribusi = {}
@@ -139,7 +139,7 @@ def hitung_distribusi(kelas_dirs: list):
     print("-" * 50)
     for kelas, jml in sorted(distribusi.items()):
         persen = (jml / total * 100) if total > 0 else 0
-        flag   = " ⚠️ (<200)" if jml < 200 else ""
+        flag   = "  (<200)" if jml < 200 else ""
         print(f"  {kelas:<23} {jml:>8} {persen:>13.1f}%{flag}")
 
     print("-" * 50)
@@ -151,7 +151,7 @@ def hitung_distribusi(kelas_dirs: list):
     # Cek keseimbangan: variance ≤ 10% dari rata-rata
     if rata > 0:
         variance_ok = all(abs(v - rata) / rata <= 0.10 for v in distribusi.values())
-        status = "✅ SEIMBANG (variance ≤ 10%)" if variance_ok else "⚠️  TIDAK SEIMBANG – pertimbangkan augmentasi atau oversampling"
+        status = " SEIMBANG (variance ≤ 10%)" if variance_ok else "  TIDAK SEIMBANG – pertimbangkan augmentasi atau oversampling"
         print(f"  Status distribusi   : {status}")
 
     return distribusi, total
@@ -188,8 +188,8 @@ def simpan_laporan(dataset_dir: Path, distribusi: dict, total: int, daftar_rusak
             persen = round(v / total * 100, 2) if total > 0 else 0
             writer.writerow({"kelas": k, "jumlah": v, "persen": persen})
 
-    print(f"\n  📄 Laporan disimpan  : {report_path}")
-    print(f"  📊 CSV distribusi    : {csv_path}")
+    print(f"\n   Laporan disimpan  : {report_path}")
+    print(f"   CSV distribusi    : {csv_path}")
 
 
 # ─── MAIN ─────────────────────────────────────────────────────────
@@ -227,5 +227,5 @@ if __name__ == "__main__":
                        gambar_valid, gambar_rusak)
 
     print("\n" + "="*55)
-    print("  ✅ SELESAI! Cek laporan audit di folder dataset.")
+    print("   SELESAI! Cek laporan audit di folder dataset.")
     print("="*55 + "\n")

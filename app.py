@@ -18,12 +18,16 @@ app = Flask(__name__)
 
 # Konfigurasi Model
 BASE_DIR = Path(__file__).resolve().parent
-MODEL_PATH = BASE_DIR / "models" / "rupiah_cnn_best.keras"
+MOBILENET_PATH = BASE_DIR / "models" / "rupiah_mobilenetv2_best.keras"
+CUSTOM_PATH    = BASE_DIR / "models" / "rupiah_cnn_best.keras"
+
+# Prioritaskan model Transfer Learning jika sudah di-train, fallback ke Custom CNN
+MODEL_PATH = MOBILENET_PATH if MOBILENET_PATH.exists() else CUSTOM_PATH
 IMG_HEIGHT = 128
 IMG_WIDTH  = 128
 
 # URUTAN KELAS PERSIS SESUAI INDEKS KERAS (ALFABETIS FOLDER)
-# 0: 1000, 1: 10000, 2: 100000, 3: 2000, 4: 20000, 5: 5000, 6: 50000, 7: 75000
+# 0: 1000, 1: 10000, 2: 100000, 3: 2000, 4: 20000, 5: 5000, 6: 50000, 7: 75000, 8: bukan_uang
 CLASSES = [
     "1000",
     "10000",
@@ -32,7 +36,8 @@ CLASSES = [
     "20000",
     "5000",
     "50000",
-    "75000"
+    "75000",
+    "bukan_uang"
 ]
 
 SPEECH_TEXTS = {
@@ -43,20 +48,51 @@ SPEECH_TEXTS = {
     "20000": "Uang Dua Puluh Ribu Rupiah",
     "50000": "Uang Lima Puluh Ribu Rupiah",
     "75000": "Uang Tujuh Puluh Lima Ribu Rupiah",
-    "100000": "Uang Seratus Ribu Rupiah"
+    "100000": "Uang Seratus Ribu Rupiah",
+    "bukan_uang": ""
 }
 
-print("Memuat model CNN...")
+print(f"Memuat model dari: {MODEL_PATH.name}...")
 model = tf.keras.models.load_model(MODEL_PATH)
-print("Model berhasil dimuat!")
+is_mobilenet = "mobilenet" in getattr(model, "name", "").lower()
+print(f"Model berhasil dimuat! (Tipe: {'Transfer Learning MobileNetV2' if is_mobilenet else 'Custom CNN'})")
 
-def preprocess_image(image_bytes):
-    """Mengubah bytes gambar menjadi tensor input CNN yang dinormalisasi"""
-    img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-    img = img.resize((IMG_WIDTH, IMG_HEIGHT))
-    img_array = np.array(img, dtype=np.float32) / 255.0
+def predict_crop(pil_img):
+    """Memprediksi satu potongan gambar menggunakan model CNN"""
+    img_resized = pil_img.resize((IMG_WIDTH, IMG_HEIGHT))
+    img_array = np.array(img_resized, dtype=np.float32)
+    
+    # Custom CNN butuh normalisasi 0..1 manual,
+    # sedangkan MobileNetV2 sudah memiliki layer preprocess_input internal
+    if not is_mobilenet:
+        img_array = img_array / 255.0
+        
     img_array = np.expand_dims(img_array, axis=0)
-    return img_array
+    preds = model.predict(img_array, verbose=0)[0]
+    idx = int(np.argmax(preds))
+    conf = float(preds[idx]) * 100
+    nom_str = CLASSES[idx]
+    return nom_str, conf
+
+def format_nominal_speech(value):
+    """Mengubah nominal angka menjadi pengucapan audio bahasa Indonesia yang fasih"""
+    bilang = {
+        1000: "seribu rupiah", 2000: "dua ribu rupiah", 3000: "tiga ribu rupiah",
+        4000: "empat ribu rupiah", 5000: "lima ribu rupiah", 6000: "enam ribu rupiah",
+        7000: "tujuh ribu rupiah", 8000: "delapan ribu rupiah", 9000: "sembilan ribu rupiah",
+        10000: "sepuluh ribu rupiah", 11000: "sebelas ribu rupiah", 12000: "dua belas ribu rupiah",
+        15000: "lima belas ribu rupiah", 16000: "enam belas ribu rupiah", 17000: "tujuh belas ribu rupiah",
+        20000: "dua puluh ribu rupiah", 22000: "dua puluh dua ribu rupiah", 25000: "dua puluh lima ribu rupiah",
+        30000: "tiga puluh ribu rupiah", 35000: "tiga puluh lima ribu rupiah", 40000: "empat puluh ribu rupiah",
+        50000: "lima puluh ribu rupiah", 55000: "lima puluh lima ribu rupiah", 60000: "enam puluh ribu rupiah",
+        70000: "tujuh puluh ribu rupiah", 75000: "tujuh puluh lima ribu rupiah", 80000: "delapan puluh ribu rupiah",
+        85000: "delapan puluh lima ribu rupiah", 90000: "sembilan puluh ribu rupiah", 95000: "sembilan puluh lima ribu rupiah",
+        100000: "seratus ribu rupiah", 105000: "seratus lima ribu rupiah", 110000: "seratus sepuluh ribu rupiah",
+        120000: "seratus dua puluh ribu rupiah", 125000: "seratus dua puluh lima ribu rupiah",
+        150000: "seratus lima puluh ribu rupiah", 175000: "seratus tujuh puluh lima ribu rupiah",
+        200000: "dua ratus ribu rupiah"
+    }
+    return bilang.get(value, f"Rp {value:,}".replace(",", ".") + " rupiah")
 
 @app.route("/")
 def index():
@@ -73,24 +109,79 @@ def predict():
 
     try:
         image_bytes = file.read()
-        processed_img = preprocess_image(image_bytes)
+        full_img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+        w, h = full_img.size
 
-        # Prediksi model CNN
-        predictions = model.predict(processed_img, verbose=0)[0]
-        predicted_idx = int(np.argmax(predictions))
-        confidence = float(predictions[predicted_idx]) * 100
+        # 1. Prediksi gambar penuh
+        nominal_full, conf_full = predict_crop(full_img)
 
-        nominal_str = CLASSES[predicted_idx]
-        nominal_formatted = f"Rp {int(nominal_str):,}".replace(",", ".")
-        suara_teks = SPEECH_TEXTS.get(nominal_str, f"Uang {nominal_str} Rupiah")
+        # 2. Cek apakah ada 2 lembar uang berdampingan (Multi-Region Detection)
+        # Jika gambar cukup lebar, potong menjadi wilayah kiri (0..58%) dan kanan (42%..100%)
+        is_multi = False
+        if w >= 150:
+            left_crop = full_img.crop((0, 0, int(w * 0.58), h))
+            right_crop = full_img.crop((int(w * 0.42), 0, w, h))
+            
+            nom_left, conf_left = predict_crop(left_crop)
+            nom_right, conf_right = predict_crop(right_crop)
+            
+            # Jika kedua sisi sama-sama mendeteksi uang yang valid dengan keyakinan tinggi (>= 85%)
+            if (nom_left != "bukan_uang" and nom_right != "bukan_uang" 
+                and conf_left >= 85.0 and conf_right >= 85.0):
+                is_multi = True
+                val_left = int(nom_left)
+                val_right = int(nom_right)
+                total_val = val_left + val_right
+                avg_conf = round((conf_left + conf_right) / 2, 2)
+                
+                suara_kiri = SPEECH_TEXTS.get(nom_left, f"Rp {val_left}")
+                suara_kanan = SPEECH_TEXTS.get(nom_right, f"Rp {val_right}")
+                total_speech = format_nominal_speech(total_val)
+                
+                return jsonify({
+                    "success": True,
+                    "is_multi": True,
+                    "is_money": True,
+                    "val_left": val_left,
+                    "val_right": val_right,
+                    "nominal_left": f"Rp {val_left:,}".replace(",", "."),
+                    "nominal_right": f"Rp {val_right:,}".replace(",", "."),
+                    "nominal": f"Rp {total_val:,}".replace(",", "."),
+                    "raw_nominal": str(total_val),
+                    "confidence": avg_conf,
+                    "speech_text": f"Dua lembar terdeteksi: {suara_kiri} dan {suara_kanan}. Totalnya {total_speech}.",
+                    "detail_text": f"Lembar 1: Rp {val_left:,} ({round(conf_left)}%) | Lembar 2: Rp {val_right:,} ({round(conf_right)}%)".replace(",", ".")
+                })
+
+        # 3. Prediksi Lembaran Tunggal (Single Banknote)
+        if nominal_full == "bukan_uang":
+            return jsonify({
+                "success": True,
+                "is_multi": False,
+                "nominal": "-",
+                "raw_nominal": "bukan_uang",
+                "confidence": round(conf_full, 2),
+                "speech_text": "",
+                "is_money": False
+            })
+
+        val_single = int(nominal_full)
+        nominal_formatted = f"Rp {val_single:,}".replace(",", ".")
+        suara_teks = SPEECH_TEXTS.get(nominal_full, f"Uang {nominal_full} Rupiah")
 
         return jsonify({
             "success": True,
+            "is_multi": False,
             "nominal": nominal_formatted,
-            "raw_nominal": nominal_str,
-            "confidence": round(confidence, 2),
-            "speech_text": f"{suara_teks}. Tingkat keyakinan {round(confidence)} persen."
+            "raw_nominal": nominal_full,
+            "numeric_value": val_single,
+            "confidence": round(conf_full, 2),
+            "speech_text": f"{suara_teks}.",
+            "is_money": True
         })
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500

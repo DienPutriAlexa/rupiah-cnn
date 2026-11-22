@@ -358,6 +358,70 @@ button.cam-active{
   border: 2px solid var(--gold);
 }
 
+/* ─── FITUR PERINTAH SUARA & MODE HITUNG ────────────────────── */
+.voice-bar{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: rgba(30, 9, 32, 0.9);
+  border: 1.5px solid var(--gold);
+  border-radius: 999px;
+  padding: 8px 18px;
+  font-size: 0.95rem;
+  color: var(--gold);
+  font-weight: 700;
+  box-shadow: 0 0 15px rgba(255, 209, 102, 0.25);
+  margin-bottom: 4px;
+}
+.mic-dot{
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #2ec4b6;
+  box-shadow: 0 0 10px #2ec4b6;
+  animation: pulseMic 1.4s infinite;
+}
+@keyframes pulseMic{
+  0%{ transform: scale(0.9); opacity: 0.6; }
+  50%{ transform: scale(1.3); opacity: 1; }
+  100%{ transform: scale(0.9); opacity: 0.6; }
+}
+.accum-panel{
+  background: rgba(45, 12, 38, 0.95);
+  border: 2px solid var(--gold);
+  border-radius: 18px;
+  padding: 16px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: 0 0 20px rgba(255, 209, 102, 0.2);
+}
+.accum-title{
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 700;
+}
+.accum-val{
+  font-size: clamp(2rem, 8vw, 2.8rem);
+  font-weight: 900;
+  color: #5eead4;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.7);
+}
+.accum-count{
+  font-size: 0.95rem;
+  color: var(--text-light);
+}
+button.active-mode{
+  background: linear-gradient(135deg, #0d9488 0%, #115e59 100%) !important;
+  color: #fff !important;
+  border-color: #5eead4 !important;
+  box-shadow: 0 0 15px rgba(94, 234, 212, 0.4) !important;
+}
+
 /* ─── LEGENDA PECAHAN RUPIAH ────────────────────────────────── */
 .legend-title{
   font-size: 0.95rem;
@@ -404,8 +468,21 @@ canvas, input[type=file]{ display: none; }
 </header>
 
 <main>
+  <!-- Bar Indikator Perintah Suara Ramah Tunanetra -->
+  <div class="voice-bar" id="voiceBar">
+    <div class="mic-dot"></div>
+    <span id="voiceStatusText">Mendengarkan... Katakan "Buka Kamera"</span>
+  </div>
+
   <div class="hint panel" role="alert">
-    Letakkan lembaran uang Rupiah di dalam kotak emas. Sistem akan langsung membaca dan membunyikan nominalnya tanpa perlu menekan tombol apa pun.
+    Ucapkan perintah suara kapan saja: <strong>"Buka kamera"</strong>, <strong>"Mode hitung"</strong>, <strong>"Berapa total"</strong>, atau <strong>"Reset"</strong>.
+  </div>
+
+  <!-- Panel Akumulasi Hitung Uang -->
+  <div class="panel accum-panel" id="accumPanel" style="display:none;" aria-live="polite">
+    <div class="accum-title">Penjumlahan Dua Lembar Uang</div>
+    <div class="accum-val" id="accumTotal">Rp 0</div>
+    <div class="accum-count" id="accumCount">Menunggu uang... (0/2 lembar)</div>
   </div>
 
   <div class="panel">
@@ -417,13 +494,15 @@ canvas, input[type=file]{ display: none; }
         <span>Arahkan Uang ke Sini</span>
       </div>
       <div id="placeholder" class="placeholder">
-        Kamera belum aktif.<br>Pilih tombol <strong>Aktifkan Kamera Otomatis</strong> di bawah.
+        Kamera belum aktif.<br>Pilih tombol <strong>Aktifkan Kamera Otomatis</strong> atau ucapkan <strong>"Buka Kamera"</strong>.
       </div>
     </div>
   </div>
 
   <div class="btns">
     <button id="btnCam" class="btn-main" type="button">Aktifkan Kamera Otomatis</button>
+    <button id="btnCountMode" type="button">Mode Hitung 2 Lembar: Nonaktif</button>
+    <button id="btnResetCount" type="button">Reset Hitung 2 Lembar</button>
     <button id="btnUpload" type="button">Unggah Foto Uang</button>
     <button id="btnVoice" type="button" aria-pressed="true">Suara: Aktif</button>
     <input type="file" id="fileInput" accept="image/*" aria-label="Pilih foto uang dari galeri">
@@ -464,17 +543,24 @@ canvas, input[type=file]{ display: none; }
 const $ = id => document.getElementById(id);
 const video=$('camera'), preview=$('preview'), placeholder=$('placeholder'), target=$('target');
 const btnCam=$('btnCam'), btnUpload=$('btnUpload'), btnVoice=$('btnVoice'), fileInput=$('fileInput');
+const btnCountMode=$('btnCountMode'), btnResetCount=$('btnResetCount');
+const accumPanel=$('accumPanel'), accumTotalEl=$('accumTotal'), accumCountEl=$('accumCount');
+const voiceStatusText=$('voiceStatusText');
 const canvas=$('canvas'), resultBox=$('result'), nominalEl=$('nominal'), confEl=$('conf'), speakingEl=$('speaking');
 const debugBox=$('debug'), debugImg=$('debugImg'), statusEl=$('status');
 
-const CONFIDENCE_THRESHOLD = 75;
-const SCAN_INTERVAL_MS = 1000;
+const CONFIDENCE_THRESHOLD = 90;
+const SCAN_INTERVAL_MS = 1500;
 const DENOM_COLORS = {1000:'#C9C04A',2000:'#9AA5B1',5000:'#C4905C',10000:'#A678E8',20000:'#4DBE7A',50000:'#4A90E2',75000:'#E8707C',100000:'#E04A4F'};
 
 let isCameraActive=false, stream=null, voiceOn=true, busy=false, objectUrl=null;
 let autoScanTimer=null;
 let lastSpokenNominal=null;
 let lastSpokenTime=0;
+
+// State Mode Hitung 2 Lembar Uang
+let countMode = false;
+let countedPair = []; // Menyimpan [lembar1, lembar2]
 
 function setStatus(msg){ statusEl.textContent = msg; }
 function vibrate(p){ if(navigator.vibrate) navigator.vibrate(p); }
@@ -499,9 +585,149 @@ btnVoice.addEventListener('click',()=>{
   speak(voiceOn ? 'Suara aktif' : 'Suara nonaktif');
 });
 
-window.addEventListener('load',()=>setTimeout(()=>{
-  speak('Selamat datang di RupiahLens Nusantara. Pilih aktifkan kamera otomatis untuk memulai.');
-},800));
+// Format Angka ke Pengucapan Rupiah Bahasa Indonesia
+function formatRupiahSpeech(num){
+  const bilang = {
+    1000: "seribu rupiah", 2000: "dua ribu rupiah", 3000: "tiga ribu rupiah",
+    4000: "empat ribu rupiah", 5000: "lima ribu rupiah", 6000: "enam ribu rupiah",
+    7000: "tujuh ribu rupiah", 8000: "delapan ribu rupiah", 9000: "sembilan ribu rupiah",
+    10000: "sepuluh ribu rupiah", 11000: "sebelas ribu rupiah", 12000: "dua belas ribu rupiah",
+    15000: "lima belas ribu rupiah", 16000: "enam belas ribu rupiah", 17000: "tujuh belas ribu rupiah",
+    20000: "dua puluh ribu rupiah", 22000: "dua puluh dua ribu rupiah", 25000: "dua puluh lima ribu rupiah",
+    30000: "tiga puluh ribu rupiah", 35000: "tiga puluh lima ribu rupiah", 40000: "empat puluh ribu rupiah",
+    50000: "lima puluh ribu rupiah", 55000: "lima puluh lima ribu rupiah", 60000: "enam puluh ribu rupiah",
+    70000: "tujuh puluh ribu rupiah", 75000: "tujuh puluh lima ribu rupiah", 80000: "delapan puluh ribu rupiah",
+    85000: "delapan puluh lima ribu rupiah", 90000: "sembilan puluh ribu rupiah", 95000: "sembilan puluh lima ribu rupiah",
+    100000: "seratus ribu rupiah", 105000: "seratus lima ribu rupiah", 110000: "seratus sepuluh ribu rupiah",
+    120000: "seratus dua puluh ribu rupiah", 125000: "seratus dua puluh lima ribu rupiah",
+    150000: "seratus lima puluh ribu rupiah", 175000: "seratus tujuh puluh lima ribu rupiah",
+    200000: "dua ratus ribu rupiah"
+  };
+  return bilang[num] || ('Rp ' + num.toLocaleString('id-ID') + ' rupiah');
+}
+
+// ─── LOGIKA MODE HITUNG 2 LEMBAR ───────────────────────────────
+function toggleCountMode(forceState = null){
+  countMode = (forceState !== null) ? forceState : !countMode;
+  btnCountMode.textContent = 'Mode Hitung 2 Lembar: ' + (countMode ? 'Aktif' : 'Nonaktif');
+  if(countMode){
+    btnCountMode.classList.add('active-mode');
+    accumPanel.style.display = 'flex';
+    resetPairCount(false);
+    speak('Mode hitung dua lembar aktif. Tunjukkan lembar pertama lalu lembar kedua.');
+  } else {
+    btnCountMode.classList.remove('active-mode');
+    accumPanel.style.display = 'none';
+    speak('Mode hitung dua lembar dinonaktifkan.');
+  }
+}
+btnCountMode.addEventListener('click', () => toggleCountMode());
+
+function resetPairCount(speakFeedback = true){
+  countedPair = [];
+  lastSpokenNominal = null;
+  accumTotalEl.textContent = 'Rp 0';
+  accumCountEl.textContent = 'Menunggu uang... (0/2 lembar)';
+  btnResetCount.textContent = 'Reset Hitung 2 Lembar';
+  if(speakFeedback){
+    speak('Hitungan dua lembar direset ke nol.');
+  }
+}
+btnResetCount.addEventListener('click', () => resetPairCount(true));
+
+// ─── PERINTAH SUARA (WEB SPEECH RECOGNITION API) ────────────────
+const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition = null;
+let isRecognizing = false;
+
+function setupSpeechRecognition(){
+  if(!SpeechRec){
+    voiceStatusText.textContent = 'Browser tidak mendukung perintah suara langsung.';
+    return;
+  }
+
+  recognition = new SpeechRec();
+  recognition.lang = 'id-ID';
+  recognition.continuous = true;
+  recognition.interimResults = false;
+
+  recognition.onstart = () => {
+    isRecognizing = true;
+    voiceStatusText.textContent = 'Mendengarkan... Katakan "Buka Kamera", "Mode Hitung", atau "Reset"';
+  };
+
+  recognition.onresult = (event) => {
+    const transcript = event.results[event.results.length - 1][0].transcript.toLowerCase().trim();
+    console.log("Perintah suara terdeteksi:", transcript);
+    voiceStatusText.textContent = `Mendengar: "${transcript}"`;
+    handleVoiceCommand(transcript);
+  };
+
+  recognition.onerror = (e) => {
+    console.warn("Speech recognition error:", e.error);
+  };
+
+  recognition.onend = () => {
+    isRecognizing = false;
+    // Otomatis aktifkan kembali agar selalu standby mendengarkan tunanetra
+    setTimeout(() => {
+      try { recognition.start(); } catch(err){}
+    }, 600);
+  };
+
+  try {
+    recognition.start();
+  } catch(e) {
+    console.log("Menunggu interaksi pengguna untuk mic...");
+  }
+}
+
+function handleVoiceCommand(cmd){
+  // 1. Kontrol Kamera
+  if(cmd.includes("buka kamera") || cmd.includes("aktifkan kamera") || cmd.includes("nyalakan kamera")){
+    if(!isCameraActive) toggleCamera();
+  }
+  else if(cmd.includes("tutup kamera") || cmd.includes("matikan kamera") || cmd.includes("stop kamera")){
+    if(isCameraActive) toggleCamera();
+  }
+  // 2. Kontrol Mode Hitung / Akumulasi
+  else if(cmd.includes("mode hitung") || cmd.includes("hitung uang") || cmd.includes("akumulasi")){
+    toggleCountMode(true);
+  }
+  else if(cmd.includes("mode normal") || cmd.includes("mode biasa") || cmd.includes("matikan hitung")){
+    toggleCountMode(false);
+  }
+  // 3. Reset Total
+  else if(cmd.includes("reset") || cmd.includes("ulang") || cmd.includes("hapus") || cmd.includes("nol")){
+    resetAccumulation();
+  }
+  // 4. Tanya Total Saat Ini
+  else if(cmd.includes("berapa total") || cmd.includes("total") || cmd.includes("jumlah")){
+    if(countHistory.length === 0){
+      speak('Belum ada uang yang dihitung.');
+    } else {
+      speak(`Total hitungan saat ini adalah ${formatRupiahSpeech(accumulatedTotal)} dari ${countHistory.length} lembar uang.`);
+    }
+  }
+  // 5. Bantuan
+  else if(cmd.includes("bantuan") || cmd.includes("perintah") || cmd.includes("tolong")){
+    speak('Perintah yang tersedia: buka kamera, tutup kamera, mode hitung, berapa total, dan reset.');
+  }
+}
+
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    speak('Selamat datang di RupiahLens Nusantara. Katakan buka kamera untuk memulai, atau ketuk layar.');
+    setupSpeechRecognition();
+  }, 800);
+});
+
+// Izinkan aktivasi mic saat layar disentuh pertama kali (kebijakan browser)
+document.body.addEventListener('click', () => {
+  if(recognition && !isRecognizing){
+    try { recognition.start(); } catch(e){}
+  }
+}, { once: true });
 
 // ─── KONTROL KAMERA & AUTOSCAN ──────────────────────────────────
 async function toggleCamera(){
@@ -569,14 +795,14 @@ function captureCamera(){
     const cw=visW*0.80, ch=visH*0.52;
     const sx=visX+(visW-cw)/2, sy=visY+(visH-ch)/2;
 
-    canvas.width=256; canvas.height=256;
+    canvas.width=512; canvas.height=512;
     const ctx=canvas.getContext('2d');
-    ctx.drawImage(video,sx,sy,cw,ch,0,0,256,256);
+    ctx.drawImage(video,sx,sy,cw,ch,0,0,512,512);
 
     debugImg.src=canvas.toDataURL('image/jpeg');
     debugBox.style.display='flex';
 
-    canvas.toBlob(blob=>resolve(blob),'image/jpeg',0.92);
+    canvas.toBlob(blob=>resolve(blob),'image/jpeg',0.95);
   });
 }
 
@@ -604,7 +830,7 @@ function stopAutoScan(){
   }
 }
 
-// ─── PENCOCOKAN NILAI RUPIAH DENGAN AUDIO COOLDOWN ──────────────
+// ─── PENCOCOKAN NILAI RUPIAH & HITUNG AKUMULASI ─────────────────
 async function processImageBlob(blob, forceSpeak=false){
   busy=true;
   const fd=new FormData();
@@ -616,6 +842,20 @@ async function processImageBlob(blob, forceSpeak=false){
 
     if(data.success){
       const conf=Number(data.confidence);
+      const isMoney = data.is_money !== false;  // false hanya jika "bukan_uang"
+
+      // Jika bukan uang, tampilkan status menunggu dan JANGAN bicara
+      if(!isMoney){
+        nominalEl.textContent='-';
+        confEl.textContent='Tidak ada uang terdeteksi';
+        resultBox.classList.remove('low');
+        setDenomColor('0');
+        setStatus('Arahkan uang ke dalam kotak pemindai...');
+        lastSpokenNominal = null;  // reset agar saat uang muncul, langsung bicara
+        busy=false;
+        return;
+      }
+
       setDenomColor(data.nominal);
       nominalEl.textContent=data.nominal;
       confEl.textContent='Akurasi: '+data.confidence+'%';
@@ -632,7 +872,35 @@ async function processImageBlob(blob, forceSpeak=false){
           lastSpokenNominal = data.nominal;
           lastSpokenTime = now;
           vibrate(150);
-          speak(data.speech_text || data.nominal);
+
+          // JIKA MODE HITUNG AKTIF: Akumulasikan ke total
+          if(countMode){
+            let addedVal = 0;
+            if(data.is_multi && data.items){
+              data.items.forEach(nom => {
+                const n = parseInt(nom);
+                accumulatedTotal += n;
+                countHistory.push(n);
+                addedVal += n;
+              });
+            } else if(data.numeric_value){
+              accumulatedTotal += data.numeric_value;
+              countHistory.push(data.numeric_value);
+              addedVal = data.numeric_value;
+            }
+
+            // Update UI Akumulasi
+            accumTotalEl.textContent = `Rp ${accumulatedTotal.toLocaleString('id-ID')}`;
+            accumCountEl.textContent = `${countHistory.length} lembar uang dihitung`;
+            btnResetCount.textContent = `Reset Total: Rp ${accumulatedTotal.toLocaleString('id-ID')}`;
+
+            // Bacakan hasil pengenalan lembar + total terkumpul
+            const totalText = formatRupiahSpeech(accumulatedTotal);
+            speak(`${data.speech_text} Total hitungan saat ini ${totalText}.`);
+          } else {
+            // Mode normal (bukan hitung akumulasi)
+            speak(data.speech_text || data.nominal);
+          }
         }
       } else {
         resultBox.classList.add('low');

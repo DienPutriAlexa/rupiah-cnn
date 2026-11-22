@@ -31,7 +31,7 @@ BATCH_SIZE = 32
 
 def evaluate(model_path: Path, test_dir: Path, output_dir: Path):
     print("\n" + "="*60)
-    print("  🧪 PENGUJIAN MODEL PADA DATASET TEST (Matriks Evaluasi)")
+    print("   PENGUJIAN MODEL PADA DATASET TEST (Matriks Evaluasi)")
     print("="*60)
     print(f"Model File : {model_path}")
     print(f"Test Dir   : {test_dir}\n")
@@ -43,9 +43,16 @@ def evaluate(model_path: Path, test_dir: Path, output_dir: Path):
     # Load Model
     print("Memuat model...")
     model = tf.keras.models.load_model(model_path)
+    is_mobilenet = "mobilenet" in getattr(model, "name", "").lower()
+    print(f"Model termuat: {model.name} (MobileNetV2: {is_mobilenet})")
 
     # Load Test Generator (tanpa shuffle agar urutan label cocok)
-    test_datagen = tf.keras.preprocessing.image.ImageDataGenerator(rescale=1.0/255.0)
+    # MobileNetV2 memiliki layer preprocess_input internal sehingga tidak perlu rescale
+    if is_mobilenet:
+        test_datagen = tf.keras.preprocessing.image.ImageDataGenerator()
+    else:
+        test_datagen = tf.keras.preprocessing.image.ImageDataGenerator(rescale=1.0/255.0)
+
     test_generator = test_datagen.flow_from_directory(
         test_dir,
         target_size=(IMG_HEIGHT, IMG_WIDTH),
@@ -55,7 +62,12 @@ def evaluate(model_path: Path, test_dir: Path, output_dir: Path):
     )
 
     class_labels = list(test_generator.class_indices.keys())
-    display_labels = [f"Rp {int(cls):,}".replace(",", ".") for cls in class_labels]
+    display_labels = []
+    for cls in class_labels:
+        if cls == "bukan_uang":
+            display_labels.append("Bukan Uang")
+        else:
+            display_labels.append(f"Rp {int(cls):,}".replace(",", "."))
 
     # Prediksi
     print("\nMelakukan prediksi pada seluruh data uji (2.700 gambar)...")
@@ -65,7 +77,7 @@ def evaluate(model_path: Path, test_dir: Path, output_dir: Path):
 
     # 1. Classification Report (Precision, Recall, F1)
     print("\n" + "="*60)
-    print("  📊 CLASSIFICATION REPORT (Precision, Recall, F1-Score)")
+    print("   CLASSIFICATION REPORT (Precision, Recall, F1-Score)")
     print("="*60)
     report_dict = classification_report(
         y_true, y_pred, target_names=display_labels, output_dict=True
@@ -83,7 +95,7 @@ def evaluate(model_path: Path, test_dir: Path, output_dir: Path):
         f.write("  MATRIKS PENGUJIAN MODEL CNN - DETEKSI MATA UANG RUPIAH\n")
         f.write("="*60 + "\n\n")
         f.write(report_text)
-    print(f"📄 Laporan teks disimpan: {report_file}")
+    print(f" Laporan teks disimpan: {report_file}")
 
     # Simpan report CSV
     csv_file = output_dir / "matriks_evaluasi.csv"
@@ -95,7 +107,7 @@ def evaluate(model_path: Path, test_dir: Path, output_dir: Path):
             writer.writerow([lbl, f"{m['precision']:.4f}", f"{m['recall']:.4f}", f"{m['f1-score']:.4f}", m['support']])
         acc = report_dict['accuracy']
         writer.writerow(["Overall Accuracy", f"{acc:.4f}", "-", "-", len(y_true)])
-    print(f"📊 CSV matriks disimpan : {csv_file}")
+    print(f" CSV matriks disimpan : {csv_file}")
 
     # 2. Confusion Matrix Visual (Heatmap)
     print("\nMembuat visualisasi Confusion Matrix...")
@@ -121,15 +133,16 @@ def evaluate(model_path: Path, test_dir: Path, output_dir: Path):
     cm_path = output_dir / "confusion_matrix.png"
     plt.savefig(cm_path, dpi=300)
     plt.close()
-    print(f"🖼️  Gambar Confusion Matrix disimpan: {cm_path}")
+    print(f"  Gambar Confusion Matrix disimpan: {cm_path}")
 
     print("\n" + "="*60)
-    print("  ✅ PENGUJIAN SELESAI DENGAN SUKSES!")
+    print("   PENGUJIAN SELESAI DENGAN SUKSES!")
     print("="*60 + "\n")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Evaluasi Model CNN")
-    parser.add_argument("--model_path", type=str, default="models/rupiah_cnn_best.keras")
+    default_model = "models/rupiah_mobilenetv2_best.keras" if Path("models/rupiah_mobilenetv2_best.keras").exists() else "models/rupiah_cnn_best.keras"
+    parser.add_argument("--model_path", type=str, default=default_model)
     parser.add_argument("--test_dir", type=str, default="dataset_split/test")
     parser.add_argument("--output_dir", type=str, default="evaluation_results")
     args = parser.parse_args()

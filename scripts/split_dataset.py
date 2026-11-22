@@ -50,7 +50,7 @@ def split_and_copy(source_dir: Path, output_dir: Path, train_ratio=0.70, val_rat
     random.seed(seed)
     
     print("\n" + "="*60)
-    print("  📦 MEMPROSES & MEMBAGI DATASET RUPIAH")
+    print("MEMPROSES & MEMBAGI DATASET RUPIAH")
     print("="*60)
     print(f"Folder Sumber : {source_dir}")
     print(f"Folder Tujuan : {output_dir}")
@@ -99,7 +99,7 @@ def split_and_copy(source_dir: Path, output_dir: Path, train_ratio=0.70, val_rat
 
     # Tampilkan Ringkasan
     print("\n" + "="*60)
-    print("  📊 RINGKASAN HASIL SPLIT DATASET")
+    print("RINGKASAN HASIL SPLIT DATASET")
     print("="*60)
     print(f"{'Nominal':<12} {'Train (70%)':>12} {'Val (15%)':>12} {'Test (15%)':>12} {'Total':>10}")
     print("-" * 60)
@@ -117,7 +117,7 @@ def split_and_copy(source_dir: Path, output_dir: Path, train_ratio=0.70, val_rat
     vl_tot = sum(summary["val"].values())
     ts_tot = sum(summary["test"].values())
     print(f"{'TOTAL':<12} {tr_tot:>12} {vl_tot:>12} {ts_tot:>12} {total_all:>10}")
-    print("\n✅ Dataset berhasil disiapkan di folder tujuan!")
+    print("\nDataset berhasil disiapkan di folder tujuan!")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Split Dataset Rupiah ke Train/Val/Test")
