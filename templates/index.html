@@ -3,7 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RupiahLens - Pengenal Nilai Uang Nusantara</title>
+<title>RupiahLens - Pengenal Nilai Uang Rupiah</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 :root{
   --bg-gradient: linear-gradient(135deg, #1b0720 0%, #400c28 35%, #6e1824 70%, #8f2425 100%);
@@ -18,7 +21,7 @@
   --denom: #FFD166;
 }
 
-*{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Poppins',sans-serif}
 
 body{
   background: var(--bg-gradient);
@@ -358,36 +361,6 @@ button.active-mode{
   box-shadow: 0 0 15px rgba(94, 234, 212, 0.4) !important;
 }
 
-/* ─── LEGENDA PECAHAN RUPIAH ────────────────────────────────── */
-.legend-title{
-  font-size: 0.95rem;
-  color: var(--gold);
-  font-weight: 800;
-  margin-bottom: 12px;
-  text-align: center;
-  letter-spacing: 0.5px;
-}
-.legend{
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  font-size: 0.85rem;
-}
-.legend span{
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--text-light);
-  font-weight: 600;
-}
-.legend b{
-  width: 14px;
-  height: 14px;
-  border-radius: 4px;
-  display: inline-block;
-  box-shadow: 0 0 6px rgba(0, 0, 0, 0.5);
-}
-
 /* ─── KOTAK HASIL PREDIKSI ─────────────────────────────────── */
 .result{
   background: rgba(25, 3, 23, 0.92);
@@ -488,9 +461,9 @@ canvas, input[type=file]{ display: none; }
 <div class="cloud cloud2" aria-hidden="true"></div>
 
 <header>
-  <div class="heritage-badge">PENGAKSES RESMI RUPIAH NUSANTARA</div>
+  
   <h1>RupiahLens</h1>
-  <p class="subtitle">Pengenal Cerdas Nilai Uang Rupiah dengan Suara bagi Penyandang Tunanetra</p>
+  <p class="subtitle">Pengenal Nilai Uang Rupiah bagi Penyandang Tunanetra</p>
 </header>
 
 <main>
@@ -528,8 +501,8 @@ canvas, input[type=file]{ display: none; }
 
   <div class="btns">
     <button id="btnCam" class="btn-main" type="button">Aktifkan Kamera Otomatis</button>
-    <button id="btnCountMode" type="button">Mode Hitung 2 Lembar: Nonaktif</button>
-    <button id="btnResetCount" type="button">Reset Hitung 2 Lembar</button>
+    <button id="btnCountMode" type="button">Hitung 2 Lembar</button>
+    <button id="btnResetCount" type="button">Reset Hitung</button>
     <button id="btnUpload" type="button">Unggah Foto Uang</button>
     <button id="btnVoice" type="button" aria-pressed="true">Suara: Aktif</button>
     <input type="file" id="fileInput" accept="image/*" aria-label="Pilih foto uang dari galeri">
@@ -546,20 +519,6 @@ canvas, input[type=file]{ display: none; }
     <div class="debug" id="debug">
       <span>Bagian uang yang diperiksa:</span>
       <img id="debugImg" alt="Potongan citra uang yang dianalisis">
-    </div>
-  </div>
-
-  <div class="panel" aria-hidden="true">
-    <p class="legend-title">Warna Mengikuti Pecahan Resmi Bank Indonesia</p>
-    <div class="legend">
-      <span><b style="background:#C9C04A"></b>1.000</span>
-      <span><b style="background:#9AA5B1"></b>2.000</span>
-      <span><b style="background:#C4905C"></b>5.000</span>
-      <span><b style="background:#A678E8"></b>10.000</span>
-      <span><b style="background:#4DBE7A"></b>20.000</span>
-      <span><b style="background:#4A90E2"></b>50.000</span>
-      <span><b style="background:#E8707C"></b>75.000</span>
-      <span><b style="background:#E04A4F"></b>100.000</span>
     </div>
   </div>
 </main>
@@ -598,20 +557,25 @@ let lastSpokenTime = 0;
 let isSpeaking = false; // Flag pengunci suara agar tidak pernah terpotong
 
 // State Machine Mode Hitung 2 Lembar
-// Nilai: 'idle' | 'waiting_first' | 'speaking_first' | 'waiting_transition' | 'waiting_second' | 'speaking_second' | 'completed'
 let countMode = false;
 let countState = 'idle';
 let countedPair = []; // Menyimpan [lembar1, lembar2]
 let transitionTimer = null;
 
-// Stabilisasi frame deteksi (minimal 2 frame berturut-turut untuk menghindari salah baca sesaat)
+// Stabilisasi frame deteksi
 let candidateNominal = null;
 let candidateCount = 0;
 
 function setStatus(msg){ statusEl.textContent = msg; }
 function vibrate(p){ if(navigator.vibrate) navigator.vibrate(p); }
 
-// ─── FITUR SUARA (TTS TAHAN POTONG) ──────────────────────────────
+// ─── PERINTAH SUARA (WEB SPEECH RECOGNITION API) ────────────────
+const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition = null;
+let isRecognizing = false;
+let userDisabledMic = false;
+
+// ─── FITUR SUARA (TTS TAHAN POTONG & RAMAH HP) ───────────────────
 function speak(text, onComplete = null){
   if(!voiceOn || !('speechSynthesis' in window) || !text){
     if(onComplete) onComplete();
@@ -619,6 +583,11 @@ function speak(text, onComplete = null){
   }
   try{
     speechSynthesis.cancel();
+    // Matikan mic sementara saat web berbicara agar tidak bentrok di HP
+    if(recognition && isRecognizing){
+      try { recognition.stop(); } catch(e){}
+    }
+
     isSpeaking = true;
     speakingEl.style.display = 'block';
 
@@ -634,6 +603,17 @@ function speak(text, onComplete = null){
       isSpeaking = false;
       speakingEl.style.display = 'none';
       if(onComplete) onComplete();
+
+      // Nyalakan kembali mic setelah selesai berbicara
+      if(recognition && !userDisabledMic && !isRecognizing){
+        setTimeout(() => {
+          try {
+            if(!isRecognizing && !userDisabledMic && !isSpeaking){
+              recognition.start();
+            }
+          } catch(e){}
+        }, 400);
+      }
     };
 
     u.onend = finishHandler;
@@ -686,7 +666,7 @@ function formatRupiahSpeech(num){
 // ─── ALUR STATE MACHINE MODE HITUNG 2 LEMBAR ────────────────────
 function toggleCountMode(forceState = null){
   countMode = (forceState !== null) ? forceState : !countMode;
-  btnCountMode.textContent = 'Mode Hitung 2 Lembar: ' + (countMode ? 'Aktif' : 'Nonaktif');
+  btnCountMode.textContent = 'Hitung 2 Lembar';
 
   if(transitionTimer){
     clearInterval(transitionTimer);
@@ -723,7 +703,7 @@ function resetPairCount(speakFeedback = true){
   accumTotalEl.textContent = 'Rp 0';
   accumCountEl.textContent = 'Menunggu lembar ke-1 (0/2 lembar)';
   accumDetailsEl.textContent = 'Arahkan lembar pertama ke kamera';
-  btnResetCount.textContent = 'Reset Hitung 2 Lembar';
+  btnResetCount.textContent = 'Reset Hitung';
 
   if(speakFeedback){
     speak('Hitungan dua lembar direset ke nol. Silakan arahkan lembar pertama.');
@@ -751,12 +731,6 @@ function startTransitionToSecondBill(){
     }
   }, 1000);
 }
-
-// ─── PERINTAH SUARA (WEB SPEECH RECOGNITION API) ────────────────
-const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-let recognition = null;
-let isRecognizing = false;
-let userDisabledMic = false;
 
 function setupSpeechRecognition(){
   if(!SpeechRec){
@@ -793,10 +767,10 @@ function setupSpeechRecognition(){
 
     recognition.onend = () => {
       isRecognizing = false;
-      if(!userDisabledMic){
+      if(!userDisabledMic && !isSpeaking){
         setTimeout(() => {
           try {
-            if(!isRecognizing && !userDisabledMic){
+            if(!isRecognizing && !userDisabledMic && !isSpeaking){
               recognition.start();
             }
           } catch(err){}
@@ -880,7 +854,7 @@ window.addEventListener('load', () => {
 // Izinkan aktivasi mic saat layar disentuh pertama kali
 document.body.addEventListener('click', () => {
   userDisabledMic = false;
-  if(recognition && !isRecognizing){
+  if(recognition && !isRecognizing && !isSpeaking){
     try { recognition.start(); } catch(e){}
   }
 }, { once: true });
@@ -984,11 +958,8 @@ function setDenomColor(nominalStr){
 function startAutoScan(){
   if(autoScanTimer) clearInterval(autoScanTimer);
   autoScanTimer = setInterval(async () => {
-    // JANGAN lakukan scan jika kamera tidak aktif, sedang memproses request,
-    // atau SEDANG BERBICARA (isSpeaking / speechSynthesis.speaking aktif)
     if(!isCameraActive || busy || isSpeaking || window.speechSynthesis.speaking) return;
 
-    // Khusus Mode Hitung: jika perhitungan 2/2 sudah lengkap, atau sedang masa jeda 5 detik, jangan scan
     if(countMode && (countState === 'completed' || countState === 'waiting_transition' || countState === 'speaking_first' || countState === 'speaking_second')) return;
 
     const blob = await captureCamera();
@@ -1035,8 +1006,6 @@ async function processImageBlob(blob, forceSpeak = false){
       }
 
       // ─── STABILISASI FRAME DETEKSI ───
-      // Agar tidak mudah salah tebak karena goyangan sesaat pada kamera,
-      // periksa apakah nominal yang sama terbaca minimal 2 frame berturut-turut (kecuali forceSpeak / conf >= 96%)
       if(!forceSpeak && conf < 96.0){
         if(candidateNominal === data.nominal){
           candidateCount++;
@@ -1045,7 +1014,6 @@ async function processImageBlob(blob, forceSpeak = false){
           candidateCount = 1;
         }
         if(candidateCount < 2){
-          // Belum stabil, tunggu 1 frame lagi
           busy = false;
           return;
         }
@@ -1072,7 +1040,7 @@ async function processImageBlob(blob, forceSpeak = false){
           accumTotalEl.textContent = `Rp ${total.toLocaleString('id-ID')}`;
           accumCountEl.textContent = 'Perhitungan Selesai (2/2 lembar)';
           accumDetailsEl.textContent = `Lembar 1: ${data.nominal_left} + Lembar 2: ${data.nominal_right} = Rp ${total.toLocaleString('id-ID')}`;
-          btnResetCount.textContent = `Reset Hitungan (Total Rp ${total.toLocaleString('id-ID')})`;
+          btnResetCount.textContent = 'Reset Hitung';
           lastSpokenNominal = data.nominal;
           lastSpokenTime = now;
           vibrate([150, 100, 150]);
@@ -1085,12 +1053,11 @@ async function processImageBlob(blob, forceSpeak = false){
           accumTotalEl.textContent = `Rp ${data.numeric_value.toLocaleString('id-ID')}`;
           accumCountEl.textContent = 'Lembar ke-1 tercatat (1/2 lembar)';
           accumDetailsEl.textContent = `Lembar 1: ${data.nominal} | Siapkan lembar kedua...`;
-          btnResetCount.textContent = `Reset Hitungan (Lembar 1: ${data.nominal})`;
+          btnResetCount.textContent = 'Reset Hitung';
           lastSpokenNominal = data.nominal;
           lastSpokenTime = now;
           vibrate(150);
 
-          // Bicara sampai selesai, lalu mulai jeda transisi 5 detik yang nyaman
           speak(`Lembar pertama: ${data.speech_nominal || data.nominal}. Tarik uang pertama, lalu siapkan lembar kedua.`, () => {
             startTransitionToSecondBill();
           });
@@ -1103,12 +1070,11 @@ async function processImageBlob(blob, forceSpeak = false){
           accumTotalEl.textContent = `Rp ${total.toLocaleString('id-ID')}`;
           accumCountEl.textContent = 'Perhitungan Selesai (2/2 lembar)';
           accumDetailsEl.textContent = `Lembar 1: Rp ${countedPair[0].toLocaleString('id-ID')} + Lembar 2: Rp ${countedPair[1].toLocaleString('id-ID')} = Rp ${total.toLocaleString('id-ID')}`;
-          btnResetCount.textContent = `Reset Hitungan (Total Rp ${total.toLocaleString('id-ID')})`;
+          btnResetCount.textContent = 'Reset Hitung';
           lastSpokenNominal = data.nominal;
           lastSpokenTime = now;
           vibrate([200, 100, 200]);
 
-          // Bacakan lembar kedua + total akhir secara tuntas
           speak(`Lembar kedua: ${data.speech_nominal || data.nominal}. Total dua lembar adalah ${formatRupiahSpeech(total)}.`);
         }
         // KASUS D: Sudah selesai (2/2)
@@ -1120,10 +1086,6 @@ async function processImageBlob(blob, forceSpeak = false){
       }
       // ─── MODE NORMAL (LEMBAR TUNGGAL) ───
       else {
-        // Hanya bersuara jika:
-        // 1. Tombol paksa (misal unggah gambar)
-        // 2. Nominal baru (berbeda dari sebelumnya dan suara sebelumnya sudah beres)
-        // 3. Nominal sama tetapi sudah lewat 5 detik agar tidak berisik mengulang-ulang
         if(forceSpeak || (isNewNominal && !isSpeaking) || (isCooldownPassed && !isSpeaking)){
           lastSpokenNominal = data.nominal;
           lastSpokenTime = now;

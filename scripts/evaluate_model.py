@@ -141,7 +141,7 @@ def evaluate(model_path: Path, test_dir: Path, output_dir: Path):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Evaluasi Model CNN")
-    default_model = "models/rupiah_mobilenetv2_best.keras" if Path("models/rupiah_mobilenetv2_best.keras").exists() else "models/rupiah_cnn_best.keras"
+    default_model = "models/rupiah_cnn_best.keras"
     parser.add_argument("--model_path", type=str, default=default_model)
     parser.add_argument("--test_dir", type=str, default="dataset_split/test")
     parser.add_argument("--output_dir", type=str, default="evaluation_results")

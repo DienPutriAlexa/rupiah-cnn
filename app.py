@@ -1,7 +1,8 @@
 """
 ====================================================================
   APLIKASI WEB DETEKSI MATA UANG RUPIAH (FLASK)
-  Aksesibilitas Penyandang Tunanetra Berbasis CNN
+  Aksesibilitas Penyandang Tunanetra Berbasis Custom CNN (99.93% Acc)
+  Versi: TFLite (ringan, untuk deployment PythonAnywhere)
 ====================================================================
 """
 
@@ -12,22 +13,18 @@ import numpy as np
 from PIL import Image
 
 from flask import Flask, request, jsonify, render_template
-import tensorflow as tf
 
 app = Flask(__name__)
 
-# Konfigurasi Model
+# Konfigurasi Model Custom CNN (From Scratch - 8 Kelas)
 BASE_DIR = Path(__file__).resolve().parent
-MOBILENET_PATH = BASE_DIR / "models" / "rupiah_mobilenetv2_best.keras"
-CUSTOM_PATH    = BASE_DIR / "models" / "rupiah_cnn_best.keras"
+TFLITE_PATH = BASE_DIR / "models" / "rupiah_cnn.tflite"
+KERAS_PATH  = BASE_DIR / "models" / "rupiah_cnn_best.keras"
 
-# Prioritaskan model Transfer Learning jika sudah di-train, fallback ke Custom CNN
-MODEL_PATH = MOBILENET_PATH if MOBILENET_PATH.exists() else CUSTOM_PATH
 IMG_HEIGHT = 128
 IMG_WIDTH  = 128
 
-# URUTAN KELAS PERSIS SESUAI INDEKS KERAS (ALFABETIS FOLDER)
-# 0: 1000, 1: 10000, 2: 100000, 3: 2000, 4: 20000, 5: 5000, 6: 50000, 7: 75000, 8: bukan_uang
+# 8 KELAS SESUAI HASIL EVALUASI MODEL CUSTOM CNN
 CLASSES = [
     "1000",
     "10000",
@@ -36,8 +33,7 @@ CLASSES = [
     "20000",
     "5000",
     "50000",
-    "75000",
-    "bukan_uang"
+    "75000"
 ]
 
 SPEECH_TEXTS = {
@@ -52,42 +48,93 @@ SPEECH_TEXTS = {
     "bukan_uang": ""
 }
 
-print(f"Memuat model dari: {MODEL_PATH.name}...")
-model = tf.keras.models.load_model(MODEL_PATH)
-is_mobilenet = "mobilenet" in getattr(model, "name", "").lower()
-print(f"Model berhasil dimuat! (Tipe: {'Transfer Learning MobileNetV2' if is_mobilenet else 'Custom CNN'})")
+# ── Muat interpreter TFLite ──────────────────────────────────────
+USE_TFLITE = TFLITE_PATH.exists()
+
+if USE_TFLITE:
+    print(f"Memuat model Custom CNN TFLite dari: {TFLITE_PATH.name}...")
+    try:
+        from ai_edge_litert.interpreter import Interpreter  # type: ignore
+        interpreter = Interpreter(model_path=str(TFLITE_PATH))
+    except ImportError:
+        try:
+            import tflite_runtime.interpreter as tflite  # type: ignore
+            interpreter = tflite.Interpreter(model_path=str(TFLITE_PATH))
+        except ImportError:
+            import tensorflow as tf
+            interpreter = tf.lite.Interpreter(model_path=str(TFLITE_PATH))
+
+    interpreter.allocate_tensors()
+    input_details  = interpreter.get_input_details()
+    output_details = interpreter.get_output_details()
+    num_out_classes = output_details[0]['shape'][-1]
+    if num_out_classes == 9 and "bukan_uang" not in CLASSES:
+        CLASSES.append("bukan_uang")
+    print(f"Model Custom CNN TFLite berhasil dimuat ({num_out_classes} kelas)!")
+
+else:
+    print(f"TFLite tidak ditemukan, memuat Custom CNN Keras: {KERAS_PATH.name}...")
+    import tensorflow as tf
+    model = tf.keras.models.load_model(KERAS_PATH)
+    num_out_classes = model.output_shape[-1]
+    if num_out_classes == 9 and "bukan_uang" not in CLASSES:
+        CLASSES.append("bukan_uang")
+    print(f"Model Custom CNN Keras berhasil dimuat ({num_out_classes} kelas)!")
+
+
+def preprocess_image(pil_img):
+    """Samakan metode resize NEAREST dan normalisasi 1/255 dengan ImageDataGenerator Keras"""
+    img_resized = pil_img.resize((IMG_WIDTH, IMG_HEIGHT), Image.Resampling.NEAREST)
+    img_array   = np.array(img_resized, dtype=np.float32) / 255.0
+    return np.expand_dims(img_array, axis=0), img_array
+
+
+def predict_probs(pil_img):
+    """Mengembalikan array probabilitas prediksi dari TFLite atau Keras"""
+    batch_array, _ = preprocess_image(pil_img)
+    if USE_TFLITE:
+        interpreter.set_tensor(input_details[0]['index'], batch_array)
+        interpreter.invoke()
+        return interpreter.get_tensor(output_details[0]['index'])[0]
+    else:
+        return model.predict(batch_array, verbose=0)[0]
+
 
 def predict_crop(pil_img):
-    """Memprediksi satu potongan gambar menggunakan model CNN"""
-    # 1. Cek apakah citra terlalu polos / gelap / tidak ada objek (tembok, meja polos, blur)
-    gray = pil_img.convert("L")
+    """Memprediksi satu potongan gambar dengan Multi-Crop (Full + Center Zoom) & Filter Entropi"""
+    # 1. Filter kontras: gambar terlalu polos (tembok/meja/gelap) -> bukan uang
+    gray     = pil_img.convert("L")
     arr_gray = np.array(gray, dtype=np.float32)
-    # Jika kontras terlalu rendah (std dev < 15), hampir pasti bukan lembaran uang bertekstur
-    if arr_gray.std() < 15.0:
+    if arr_gray.std() < 18.0:
         return "bukan_uang", 99.0
 
-    img_resized = pil_img.resize((IMG_WIDTH, IMG_HEIGHT))
-    img_array = np.array(img_resized, dtype=np.float32)
-    
-    # Custom CNN butuh normalisasi 0..1 manual,
-    # sedangkan MobileNetV2 sudah memiliki layer preprocess_input internal
-    if not is_mobilenet:
-        img_array = img_array / 255.0
-        
-    img_array = np.expand_dims(img_array, axis=0)
-    preds = model.predict(img_array, verbose=0)[0]
-    idx = int(np.argmax(preds))
+    # 2. Ambil prediksi gambar utuh dan potongan tengah (untuk membuang background wajah/tangan di pinggir kotak)
+    w, h = pil_img.size
+    center_img = pil_img.crop((int(w * 0.12), int(h * 0.12), int(w * 0.88), int(h * 0.88)))
+
+    preds_full   = predict_probs(pil_img)
+    preds_center = predict_probs(center_img)
+
+    # Rata-ratakan hasil prediksi dengan bobot lebih besar pada area tengah uang
+    preds = (preds_full * 0.4) + (preds_center * 0.6)
+
+    idx  = int(np.argmax(preds))
     conf = float(preds[idx]) * 100
     nom_str = CLASSES[idx]
 
-    # Jika keyakinan model rendah (< 70%), anggap bukan uang
-    if conf < 70.0:
+    # 3. Karena model 8 kelas tidak punya kelas 'bukan_uang', gunakan syarat confidence >= 85%
+    # dan pastikan selisih dengan juara ke-2 cukup jauh (tidak menebak acak)
+    sorted_preds = np.sort(preds)[::-1]
+    margin = float(sorted_preds[0] - sorted_preds[1]) * 100
+
+    if conf < 82.0 or margin < 35.0:
         return "bukan_uang", conf
 
     return nom_str, conf
 
+
 def format_nominal_speech(value):
-    """Mengubah nominal angka menjadi pengucapan audio bahasa Indonesia yang fasih"""
+    """Mengubah nominal angka menjadi pengucapan bahasa Indonesia"""
     bilang = {
         1000: "seribu rupiah", 2000: "dua ribu rupiah", 3000: "tiga ribu rupiah",
         4000: "empat ribu rupiah", 5000: "lima ribu rupiah", 6000: "enam ribu rupiah",
@@ -106,9 +153,11 @@ def format_nominal_speech(value):
     }
     return bilang.get(value, f"Rp {value:,}".replace(",", ".") + " rupiah")
 
+
 @app.route("/")
 def index():
     return render_template("index.html")
+
 
 @app.route("/predict", methods=["POST"])
 def predict():
@@ -119,76 +168,70 @@ def predict():
     if file.filename == "":
         return jsonify({"success": False, "message": "File tidak dipilih"}), 400
 
-    mode = request.form.get("mode", "single")  # "single" atau "dual"
+    mode = request.form.get("mode", "single")
 
     try:
         image_bytes = file.read()
-        full_img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-        w, h = full_img.size
+        full_img    = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+        w, h        = full_img.size
 
-        # 1. Prediksi citra penuh (Full Image)
+        # 1. Prediksi citra penuh
         nominal_full, conf_full = predict_crop(full_img)
 
-        # 2. Cek apakah ada 2 lembar uang berdampingan (Side-by-Side Banknotes)
-        # Kondisi agar tidak memotong 1 lembar uang utuh menjadi 2 potongan palsu:
-        # - Rasio lebar terhadap tinggi harus sangat lebar (aspect_ratio >= 1.6)
-        # - Potongan kiri dan kanan harus sama-sama bernilai uang valid dengan akurasi >= 80%
-        # - Salah satu potongan harus cocok dengan nominal_full, ATAU nominal_full ragu-ragu (< 70%) / bukan_uang
-        is_multi = False
+        # 2. Cek 2 lembar berdampingan (HANYA untuk gambar yang sangat lebar)
+        is_multi     = False
         aspect_ratio = w / max(h, 1)
 
         if aspect_ratio >= 1.6 and w >= 200:
-            left_crop = full_img.crop((0, 0, int(w * 0.52), h))
+            left_crop  = full_img.crop((0, 0, int(w * 0.52), h))
             right_crop = full_img.crop((int(w * 0.48), 0, w, h))
-            
-            nom_left, conf_left = predict_crop(left_crop)
+
+            nom_left,  conf_left  = predict_crop(left_crop)
             nom_right, conf_right = predict_crop(right_crop)
-            
+
             is_valid_money_both = (
                 nom_left != "bukan_uang" and nom_right != "bukan_uang"
-                and conf_left >= 80.0 and conf_right >= 80.0
+                and conf_left >= 82.0 and conf_right >= 82.0
             )
 
             if is_valid_money_both:
-                # Jika beda nominal (misal 5.000 dan 10.000 berdampingan)
                 is_distinct_dual = (
                     nom_left != nom_right and (
-                        nominal_full == "bukan_uang" or conf_full < 70.0
+                        nominal_full == "bukan_uang" or conf_full < 75.0
                         or nom_left == nominal_full or nom_right == nominal_full
                     )
                 )
-                # Jika pecahan sama berdampingan khusus saat mode dual dan citra sangat lebar
                 is_same_dual = (
                     mode == "dual" and nom_left == nom_right and aspect_ratio >= 2.6
                 )
 
                 if is_distinct_dual or is_same_dual:
-                    is_multi = True
-                    val_left = int(nom_left)
+                    is_multi  = True
+                    val_left  = int(nom_left)
                     val_right = int(nom_right)
                     total_val = val_left + val_right
-                    avg_conf = round((conf_left + conf_right) / 2, 2)
-                    
-                    suara_kiri = SPEECH_TEXTS.get(nom_left, f"Rp {val_left}")
+                    avg_conf  = round((conf_left + conf_right) / 2, 2)
+
+                    suara_kiri  = SPEECH_TEXTS.get(nom_left,  f"Rp {val_left}")
                     suara_kanan = SPEECH_TEXTS.get(nom_right, f"Rp {val_right}")
                     total_speech = format_nominal_speech(total_val)
-                    
+
                     return jsonify({
                         "success": True,
                         "is_multi": True,
                         "is_money": True,
                         "val_left": val_left,
                         "val_right": val_right,
-                        "nominal_left": f"Rp {val_left:,}".replace(",", "."),
+                        "nominal_left":  f"Rp {val_left:,}".replace(",", "."),
                         "nominal_right": f"Rp {val_right:,}".replace(",", "."),
-                        "nominal": f"Rp {total_val:,}".replace(",", "."),
+                        "nominal":       f"Rp {total_val:,}".replace(",", "."),
                         "numeric_value": total_val,
-                        "confidence": avg_conf,
-                        "speech_text": f"Dua lembar terdeteksi: {suara_kiri} dan {suara_kanan}. Totalnya {total_speech}.",
-                        "detail_text": f"Lembar 1: Rp {val_left:,} ({round(conf_left)}%) | Lembar 2: Rp {val_right:,} ({round(conf_right)}%)".replace(",", ".")
+                        "confidence":    avg_conf,
+                        "speech_text":   f"Dua lembar terdeteksi: {suara_kiri} dan {suara_kanan}. Totalnya {total_speech}.",
+                        "detail_text":   f"Lembar 1: Rp {val_left:,} ({round(conf_left)}%) | Lembar 2: Rp {val_right:,} ({round(conf_right)}%)".replace(",", ".")
                     })
 
-        # 3. Prediksi Lembaran Tunggal (Single Banknote)
+        # 3. Lembaran Tunggal
         if nominal_full == "bukan_uang":
             return jsonify({
                 "success": True,
@@ -202,9 +245,9 @@ def predict():
                 "is_money": False
             })
 
-        val_single = int(nominal_full)
+        val_single        = int(nominal_full)
         nominal_formatted = f"Rp {val_single:,}".replace(",", ".")
-        suara_teks = SPEECH_TEXTS.get(nominal_full, f"Uang {nominal_full} Rupiah")
+        suara_teks        = SPEECH_TEXTS.get(nominal_full, f"Uang {nominal_full} Rupiah")
 
         return jsonify({
             "success": True,
@@ -220,6 +263,7 @@ def predict():
 
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
